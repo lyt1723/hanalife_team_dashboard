@@ -1,0 +1,174 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>팀 연차/외근 관리 시스템</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Pretendard', sans-serif; }
+        .fc-day-sun a { color: #ef4444 !important; } 
+        .fc-day-sat a { color: #3b82f6 !important; }
+        .holiday-event { background-color: #fee2e2 !important; border: none !important; color: #b91c1c !important; font-weight: bold; }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div class="max-w-6xl mx-auto py-8 px-4">
+        <header class="flex justify-between items-center mb-8 bg-white p-6 rounded-xl shadow-sm">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">🏗️ 설계팀 근무 관리 시스템</h1>
+                <p class="text-gray-500 text-sm mt-1">한국 공휴일 및 팀원 연차 자동 계산</p>
+            </div>
+            <div id="team-status" class="grid grid-cols-3 gap-3 text-xs">
+                </div>
+        </header>
+
+        <div class="bg-white p-6 rounded-xl shadow-lg" id="calendar"></div>
+    </div>
+
+    <div id="modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg shadow-2xl w-96">
+            <h3 class="text-lg font-bold mb-4 text-blue-700" id="selected-date-display">날짜 선택</h3>
+            
+            <label class="block text-sm font-medium mb-1">팀원 선택</label>
+            <select id="user-select" class="w-full border p-2 rounded mb-4 focus:ring-2 focus:ring-blue-500 outline-none">
+                </select>
+
+            <label class="block text-sm font-medium mb-1">구분</label>
+            <select id="event-type" class="w-full border p-2 rounded mb-4 focus:ring-2 focus:ring-blue-500 outline-none">
+                <option value="연차">🏝️ 일반 연차 (-1)</option>
+                <option value="여름휴가">☀️ 여름휴가 (연간 3일)</option>
+                <option value="반차">🌗 반차 (-0.5)</option>
+                <option value="외근">💼 외근 (차감 없음)</option>
+            </select>
+
+            <div class="flex justify-end gap-2 mt-2">
+                <button onclick="closeModal()" class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 transition">취소</button>
+                <button onclick="addTeamEvent()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">기록하기</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. 초기 데이터 세팅
+        const teamMembers = ["이연택", "박승현", "강미현", "김용주", "정혜정", "강선경"];
+        const POSITION = "설계매니저";
+        let userData = {};
+
+        // 로컬스토리지에서 데이터 불러오기 또는 초기화
+        const savedData = localStorage.getItem('teamCalendarData');
+        if (savedData) {
+            userData = JSON.parse(savedData);
+        } else {
+            teamMembers.forEach(name => {
+                userData[name] = { total: 15, used: 0, summerUsed: 0 };
+            });
+        }
+
+        let calendar;
+        let selectedDateStr = "";
+
+        document.addEventListener('DOMContentLoaded', function() {
+            renderStatus();
+            initUserSelect();
+
+            const calendarEl = document.getElementById('calendar');
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'ko',
+                headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,dayGridWeek' },
+                // 한국 공휴일 API 연동 (iCal 데이터 소스 활용)
+                events: 'https://p63-caldav.icloud.com/published/2/MTI3NjkzMTgyMTI3NjkzMe_7F7Z-Z5-z-Z-Z/Korea_Holidays.ics',
+                eventSources: [
+                    {
+                        events: JSON.parse(localStorage.getItem('calendarEvents') || '[]'),
+                        id: 'teamEvents'
+                    }
+                ],
+                dateClick: function(info) {
+                    selectedDateStr = info.dateStr;
+                    document.getElementById('selected-date-display').innerText = `${selectedDateStr} 일정 등록`;
+                    document.getElementById('modal').classList.remove('hidden');
+                }
+            });
+            calendar.render();
+        });
+
+        // 팀원 선택 드롭다운 생성
+        function initUserSelect() {
+            const select = document.getElementById('user-select');
+            teamMembers.forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.innerText = `${name} ${POSITION}`;
+                select.appendChild(opt);
+            });
+        }
+
+        // 현황판 업데이트
+        function renderStatus() {
+            const statusEl = document.getElementById('team-status');
+            statusEl.innerHTML = '';
+            teamMembers.forEach(name => {
+                const data = userData[name];
+                const div = document.createElement('div');
+                div.className = "bg-gray-50 p-2 rounded border";
+                div.innerHTML = `
+                    <div class="font-bold">${name}</div>
+                    <div class="text-blue-600">잔여: ${data.total - data.used}일</div>
+                    <div class="text-orange-500 text-[10px]">여름휴가: ${3 - data.summerUsed}/3</div>
+                `;
+                statusEl.appendChild(div);
+            });
+        }
+
+        function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+
+        function addTeamEvent() {
+            const name = document.getElementById('user-select').value;
+            const type = document.getElementById('event-type').value;
+            let deduction = 0;
+
+            if (type === "연차") deduction = 1;
+            else if (type === "반차") deduction = 0.5;
+            else if (type === "여름휴가") {
+                if (userData[name].summerUsed >= 3) {
+                    alert("여름휴가 3일을 모두 사용했습니다!");
+                    return;
+                }
+                userData[name].summerUsed += 1;
+            }
+
+            // 잔여 연차 체크
+            if (deduction > 0 && (userData[name].used + deduction > userData[name].total)) {
+                alert("잔여 연차가 부족합니다!");
+                return;
+            }
+
+            userData[name].used += deduction;
+
+            const newEvent = {
+                title: `${name} ${POSITION} (${type})`,
+                start: selectedDateStr,
+                allDay: true,
+                color: type.includes('외근') ? '#3b82f6' : '#ef4444',
+                extendedProps: { name, type, deduction }
+            };
+
+            calendar.addEvent(newEvent);
+            
+            // 데이터 저장 (새로고침해도 유지)
+            const currentEvents = JSON.parse(localStorage.getItem('calendarEvents') || '[]');
+            currentEvents.push(newEvent);
+            localStorage.setItem('calendarEvents', JSON.stringify(currentEvents));
+            localStorage.setItem('teamCalendarData', JSON.stringify(userData));
+
+            renderStatus();
+            closeModal();
+        }
+    </script>
+</body>
+</html>
