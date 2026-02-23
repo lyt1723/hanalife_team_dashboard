@@ -31,10 +31,10 @@
         #calendar { 
             background: white; padding: 25px; border-radius: 24px; 
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;
-            min-height: 700px;
+            margin-bottom: 50px;
         }
-        .fc { --fc-border-color: #f1f5f9; --fc-button-bg-color: #1e293b; --fc-button-border-color: #1e293b; --fc-button-hover-bg-color: #0f172a; }
-        .fc-event { border: none !important; border-radius: 6px !important; padding: 3px 6px !important; font-weight: 600 !important; }
+        /* 버튼 및 이벤트 스타일 */
+        .fc-event { border: none !important; border-radius: 6px !important; padding: 3px 6px !important; font-weight: 600 !important; cursor: pointer; }
         
         /* 커스텀 셀렉트 화살표 */
         .custom-select {
@@ -55,7 +55,7 @@
         <header class="flex flex-col gap-8 mb-10">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-4">
-                    <div class="p-3 bg-emerald-600 rounded-2xl shadow-lg shadow-emerald-100">
+                    <div class="p-3 bg-emerald-600 rounded-2xl shadow-lg">
                         <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     </div>
                     <h1 class="text-3xl font-black text-slate-800 tracking-tight">하나생명 이정화 지점장 팀</h1>
@@ -78,7 +78,7 @@
             <div class="space-y-6">
                 <div>
                     <label class="block text-xs font-black text-slate-400 mb-2 uppercase tracking-widest">날짜 선택</label>
-                    <input type="date" id="selected-date" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl text-slate-700 font-bold outline-none focus:border-emerald-500 transition-all">
+                    <input type="date" id="selected-date" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl text-slate-700 font-bold outline-none focus:border-emerald-500">
                 </div>
 
                 <div>
@@ -109,7 +109,7 @@
 
                 <div class="flex gap-4 pt-4">
                     <button id="btn-delete" onclick="deleteEvent()" class="hidden flex-1 py-4 bg-rose-50 text-rose-600 rounded-2xl font-black hover:bg-rose-100 transition">삭제</button>
-                    <button onclick="saveEvent()" class="flex-1 py-4 bg-slate-800 text-white rounded-2xl font-black hover:bg-slate-900 shadow-xl shadow-slate-200 transition">저장하기</button>
+                    <button onclick="saveEvent()" class="flex-1 py-4 bg-slate-800 text-white rounded-2xl font-black hover:bg-slate-900 shadow-xl transition">저장하기</button>
                 </div>
             </div>
         </div>
@@ -120,7 +120,8 @@
             <div class="flex justify-between items-center mb-6">
                 <div>
                     <h3 class="text-2xl font-black text-slate-800"><span id="view-manager-name" class="text-emerald-600"></span> 매니저 일정</h3>
-                    <p class="text-slate-400 text-sm font-medium">월별 개인 일정을 확인합니다.</p> </div>
+                    <p class="text-slate-400 text-sm font-medium">월별 개인 일정을 확인합니다.</p>
+                </div>
                 <button onclick="closeModal('manager-modal')" class="text-slate-400 hover:text-slate-600 text-3xl font-light">&times;</button>
             </div>
 
@@ -145,12 +146,11 @@
         let selectedEventId = null;
         let currentViewingManager = "";
 
-        // 공휴일 API 가져오기
+        // 공휴일 API 연동
         async function fetchHolidays() {
             const currentYear = new Date().getFullYear();
             const years = [currentYear, currentYear + 1];
             let allHolidays = [];
-            
             for (const year of years) {
                 try {
                     const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/KR`);
@@ -158,7 +158,7 @@
                         const data = await res.json();
                         allHolidays = [...allHolidays, ...data];
                     }
-                } catch (e) { console.error(`${year}년 공휴일 로드 실패`); }
+                } catch (e) { console.error("공휴일 로드 실패"); }
             }
             holidays = allHolidays;
         }
@@ -173,7 +173,7 @@
             calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 locale: 'ko',
-                height: 'auto', // 1. 달력 높이 오류 수정
+                height: 'auto', // 높이 자동 조절로 먹통 방지
                 headerToolbar: { 
                     left: 'prev,next today', 
                     center: 'title', 
@@ -184,10 +184,8 @@
                     const holidayEvents = holidays.map(h => ({
                         title: h.localName,
                         start: h.date,
-                        allDay: true,
-                        display: 'background',
-                        backgroundColor: '#fff1f2',
-                        extendedProps: { isHoliday: true }
+                        display: 'background', // 배경색으로 표시하여 숫자와 상호작용 유지
+                        backgroundColor: '#fff1f2'
                     }));
                     successCallback([...holidayEvents, ...events]);
                 },
@@ -209,7 +207,7 @@
                 },
                 dateClick: (info) => openModal(info.dateStr),
                 eventClick: (info) => {
-                    if (info.event.extendedProps.isHoliday) return;
+                    if (info.event.display === 'background') return;
                     openEditModal(info.event);
                 }
             });
@@ -224,10 +222,9 @@
                 const card = document.createElement('div');
                 card.className = `manager-card`;
                 card.onclick = () => openManagerSchedulePopup(name);
-                // 3. 설계매니저 문구 크기 및 가시성 조정 (text-xs font-black)
                 card.innerHTML = `
                     <div class="flex flex-col gap-1">
-                        <span class="text-xs font-black text-emerald-600 uppercase tracking-wider mb-1">${POSITION}</span>
+                        <span class="text-[13px] font-black text-emerald-600 uppercase tracking-wider mb-1">${POSITION}</span>
                         <span class="text-xl font-black text-slate-800">${name}</span>
                         <div class="mt-4 flex justify-between items-end">
                             <span class="text-[11px] text-slate-400 font-bold">잔여 연차</span>
@@ -242,7 +239,6 @@
             });
         }
 
-        // 매니저 상세 팝업
         function openManagerSchedulePopup(name) {
             currentViewingManager = name;
             document.getElementById('view-manager-name').innerText = name;
@@ -279,7 +275,7 @@
                         </div>
                         <div>
                             <div class="font-bold text-slate-800 text-lg">${e.type} ${e.location ? `<span class="text-emerald-600">[${e.location}]</span>` : ''}</div>
-                            <div class="text-xs text-slate-400 font-bold mt-0.5">${e.deduction > 0 ? `차감 일수: ${e.deduction}일` : '일반 일정'}</div>
+                            <div class="text-xs text-slate-400 font-bold mt-0.5">${e.deduction > 0 ? `연차 소모: ${e.deduction}일` : '일반 일정'}</div>
                         </div>
                     </div>
                 `;
