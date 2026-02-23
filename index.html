@@ -12,29 +12,29 @@
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; color: #1e293b; }
         
-        /* 공휴일 및 주말 스타일 */
+        /* [공휴일 및 날짜 스타일] */
+        .fc-day-sun .fc-daygrid-day-number { color: #ef4444; } /* 일요일 빨간색 */
+        .fc-day-sat .fc-daygrid-day-number { color: #3b82f6; } /* 토요일 파란색 */
         .is-holiday .fc-daygrid-day-number { color: #ef4444 !important; font-weight: 800; }
         .holiday-bg { background-color: #fff1f2 !important; }
-        .fc-day-sun .fc-daygrid-day-number { color: #ef4444; }
-        .fc-day-sat .fc-daygrid-day-number { color: #3b82f6; }
-        .holiday-name-label { color: #e11d48; font-size: 0.7rem; font-weight: 700; margin-left: 4px; vertical-align: middle; }
+        .holiday-label { color: #e11d48; font-size: 0.7rem; font-weight: 700; margin-left: 4px; }
 
-        /* 매니저 카드 */
+        /* [매니저 카드 스타일] */
         .manager-card { 
             background: white; border: 2px solid transparent; border-radius: 20px; 
-            padding: 20px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer;
+            padding: 20px; transition: all 0.3s ease; cursor: pointer;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
         }
-        .manager-card:hover { transform: translateY(-5px); border-color: #10b981; box-shadow: 0 12px 20px -5px rgba(16, 185, 129, 0.15); }
+        .manager-card:hover { transform: translateY(-3px); border-color: #10b981; }
+        .active-filter { border-color: #10b981; background-color: #ecfdf5; }
 
-        /* 달력 안정화 (충돌 방지를 위해 최소한의 설정만 유지) */
+        /* [달력 레이아웃 - 먹통 방지 핵심] */
         #calendar { 
-            background: white; padding: 20px; border-radius: 24px; 
+            background: white; padding: 25px; border-radius: 24px; 
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;
             margin-bottom: 50px;
         }
-        .fc { --fc-button-bg-color: #1e293b; --fc-button-border-color: #1e293b; --fc-button-hover-bg-color: #0f172a; }
-        .fc-event { border: none !important; border-radius: 6px !important; padding: 2px 6px !important; font-weight: 600 !important; cursor: pointer; }
+        .fc-event { cursor: pointer; border: none !important; padding: 2px 4px !important; font-weight: 600 !important; }
         
         .modal-content { animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -46,11 +46,12 @@
         <header class="flex flex-col gap-8 mb-10">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-4">
-                    <div class="p-3 bg-emerald-600 rounded-2xl shadow-lg">
+                    <div class="p-3 bg-emerald-600 rounded-2xl">
                         <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     </div>
-                    <h1 class="text-3xl font-black text-slate-800 tracking-tight">하나생명 이정화 지점장 팀</h1>
+                    <h1 class="text-3xl font-black text-slate-800">하나생명 이정화 지점장 팀</h1>
                 </div>
+                <div id="filter-indicator" class="hidden bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full font-bold">필터링 중</div>
             </div>
             
             <div id="manager-list" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5"></div>
@@ -62,8 +63,8 @@
     <div id="modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[1000] p-4">
         <div class="bg-white p-8 rounded-[32px] shadow-2xl w-full max-w-md modal-content">
             <div class="flex justify-between items-center mb-8">
-                <h3 class="text-2xl font-black text-slate-800" id="modal-title">일정 등록</h3>
-                <button onclick="closeModal('modal')" class="text-slate-400 hover:text-slate-600 text-3xl font-light">&times;</button>
+                <h3 class="text-2xl font-black text-slate-800" id="modal-title">일정 관리</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-3xl font-light">&times;</button>
             </div>
             
             <div class="space-y-6">
@@ -76,7 +77,7 @@
                     <select id="user-select" class="w-full border-2 border-slate-100 p-4 rounded-2xl font-bold outline-none focus:border-emerald-500 cursor-pointer"></select>
                 </div>
                 <div>
-                    <label class="block text-xs font-black text-slate-400 mb-2 uppercase tracking-widest">종류</label>
+                    <label class="block text-xs font-black text-slate-400 mb-2 uppercase tracking-widest">구분</label>
                     <select id="event-type" onchange="handleTypeChange(this.value)" class="w-full border-2 border-slate-100 p-4 rounded-2xl font-bold outline-none focus:border-emerald-500 cursor-pointer">
                         <option value="연차">연차 (-1일)</option>
                         <option value="여름휴가">여름휴가 (-1일)</option>
@@ -85,8 +86,8 @@
                     </select>
                 </div>
                 <div id="outside-detail" class="hidden bg-emerald-50 p-5 rounded-2xl border-2 border-emerald-100">
-                    <label class="block text-sm font-bold text-emerald-700 mb-2 uppercase">외근처</label>
-                    <select id="outside-location" class="w-full bg-white border-none p-2 rounded-xl font-bold text-emerald-800 outline-none">
+                    <label class="block text-sm font-bold text-emerald-700 mb-2">외근처</label>
+                    <select id="outside-location" class="w-full bg-white border-none p-2 rounded-xl font-bold outline-none">
                         <option value="삼성금융파트너스">삼성금융파트너스</option>
                         <option value="아이에프에이">아이에프에이</option>
                         <option value="에이원금융판매">에이원금융판매</option>
@@ -95,27 +96,10 @@
                     </select>
                 </div>
                 <div class="flex gap-4 pt-4">
-                    <button id="btn-delete" onclick="deleteEvent()" class="hidden flex-1 py-4 bg-rose-50 text-rose-600 rounded-2xl font-black hover:bg-rose-100 transition">삭제</button>
-                    <button onclick="saveEvent()" class="flex-1 py-4 bg-slate-800 text-white rounded-2xl font-black hover:bg-slate-900 shadow-xl transition">저장</button>
+                    <button id="btn-delete" onclick="deleteEvent()" class="hidden flex-1 py-4 bg-rose-50 text-rose-600 rounded-2xl font-black">삭제</button>
+                    <button onclick="saveEvent()" class="flex-1 py-4 bg-slate-800 text-white rounded-2xl font-black">저장</button>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <div id="manager-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[1100] p-4">
-        <div class="bg-white p-8 rounded-[32px] shadow-2xl w-full max-w-2xl modal-content max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <h3 class="text-2xl font-black text-slate-800"><span id="view-manager-name" class="text-emerald-600"></span> 매니저</h3>
-                    <p class="text-slate-400 text-sm font-medium">월별 개인 일정을 확인합니다.</p>
-                </div>
-                <button onclick="closeModal('manager-modal')" class="text-slate-400 hover:text-slate-600 text-3xl font-light">&times;</button>
-            </div>
-            <div class="flex gap-3 mb-6 bg-slate-50 p-2 rounded-2xl">
-                <select id="view-year" class="flex-1 p-3 bg-white border border-slate-200 rounded-xl font-bold" onchange="renderManagerSchedule()"></select>
-                <select id="view-month" class="flex-1 p-3 bg-white border border-slate-200 rounded-xl font-bold" onchange="renderManagerSchedule()"></select>
-            </div>
-            <div id="manager-event-list" class="space-y-3"></div>
         </div>
     </div>
 
@@ -124,85 +108,89 @@
         const POSITION = "설계매니저";
         const TOTAL_LEAVE = 15;
         
-        let events = JSON.parse(localStorage.getItem('hana_pro_v2')) || [];
+        let events = JSON.parse(localStorage.getItem('hana_pro_v3')) || [];
         let holidays = [];
         let calendar;
+        let activeFilter = null;
         let isEditMode = false;
         let selectedEventId = null;
-        let currentViewingManager = "";
 
-        // 실시간 공휴일 데이터 가져오기 (Nager.at API)
+        // [신규 달력 로직 - 처음부터 다시 작성]
         async function fetchHolidays() {
             const year = new Date().getFullYear();
             try {
                 const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/KR`);
                 if (res.ok) holidays = await res.json();
-            } catch (e) { console.error("공휴일 로딩 실패"); }
+            } catch (e) { console.error("공휴일 로드 실패"); }
         }
 
         document.addEventListener('DOMContentLoaded', async function() {
             await fetchHolidays();
             renderDashboard();
             initUserSelect();
-            initYearMonthSelectors();
 
             const calendarEl = document.getElementById('calendar');
             calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 locale: 'ko',
-                height: 'auto', // 높이 자동화로 먹통 현상 해결
-                headerToolbar: { 
-                    left: 'prev,next today', 
-                    center: 'title', 
-                    right: 'dayGridMonth,dayGridWeek' 
-                },
-                dayMaxEventRows: 4,
+                height: 'auto', // 고정 높이 제거하여 먹통 방지
+                headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,dayGridWeek' },
+                dayMaxEvents: true,
                 events: function(info, successCallback) {
-                    successCallback(events);
+                    // 필터링 적용된 이벤트만 반환
+                    let filtered = activeFilter ? events.filter(e => e.name === activeFilter) : events;
+                    
+                    // 공휴일을 배경 이벤트로 추가 (클릭 방해 안함)
+                    const holidayEvents = holidays.map(h => ({
+                        start: h.date,
+                        display: 'background',
+                        backgroundColor: '#fff1f2'
+                    }));
+                    
+                    successCallback([...filtered, ...holidayEvents]);
                 },
-                // 공휴일 배경색 및 빨간 숫자 적용
-                dayCellClassNames: function(arg) {
-                    const dateStr = arg.date.toLocaleDateString('en-CA');
-                    if (holidays.some(h => h.date === dateStr)) return ['holiday-bg', 'is-holiday'];
-                },
-                // 날짜 옆에 공휴일 이름 표시
+                // 공휴일 날짜 커스텀 렌더링
                 dayCellContent: function(arg) {
                     const dateStr = arg.date.toLocaleDateString('en-CA');
                     const holiday = holidays.find(h => h.date === dateStr);
                     let nodes = [arg.dayNumberText];
                     if (holiday) {
                         let span = document.createElement('span');
-                        span.className = 'holiday-name-label';
+                        span.className = 'holiday-label';
                         span.innerText = holiday.localName;
                         nodes.push(span);
                     }
                     return { domNodes: nodes };
                 },
+                dayCellClassNames: function(arg) {
+                    const dateStr = arg.date.toLocaleDateString('en-CA');
+                    if (holidays.some(h => h.date === dateStr)) return ['is-holiday'];
+                },
                 dateClick: (info) => openModal(info.dateStr),
-                eventClick: (info) => openEditModal(info.event)
+                eventClick: (info) => {
+                    if (info.event.display === 'background') return;
+                    openEditModal(info.event);
+                }
             });
             calendar.render();
         });
 
-        // 대시보드 렌더링 (설계매니저 문구 가시성 강화)
         function renderDashboard() {
             const listEl = document.getElementById('manager-list');
             listEl.innerHTML = '';
             managers.forEach(name => {
                 const used = events.filter(e => e.name === name).reduce((acc, curr) => acc + (parseFloat(curr.deduction) || 0), 0);
+                const isActive = activeFilter === name;
                 const card = document.createElement('div');
-                card.className = `manager-card`;
-                card.onclick = () => openManagerSchedulePopup(name);
+                card.className = `manager-card ${isActive ? 'active-filter' : ''}`;
+                card.onclick = () => toggleFilter(name);
                 card.innerHTML = `
                     <div class="flex flex-col gap-1">
-                        <span class="text-[13px] font-black text-emerald-600 uppercase tracking-wider mb-1">${POSITION}</span>
+                        <span class="text-[13px] font-black text-emerald-600 uppercase mb-1">${POSITION}</span>
                         <span class="text-xl font-black text-slate-800">${name}</span>
                         <div class="mt-4 flex justify-between items-end">
-                            <span class="text-[11px] text-slate-400 font-bold">잔여 연차</span>
+                            <span class="text-[11px] text-slate-400 font-bold">잔여</span>
                             <span class="text-xl font-black ${TOTAL_LEAVE - used <= 2 ? 'text-rose-500' : 'text-slate-800'}">${TOTAL_LEAVE - used}일</span>
-                        </div>
-                        <div class="w-full bg-slate-100 h-2 rounded-full mt-2 overflow-hidden">
-                            <div class="bg-emerald-500 h-full transition-all duration-700" style="width: ${( (TOTAL_LEAVE-used)/TOTAL_LEAVE ) * 100}%"></div>
                         </div>
                     </div>
                 `;
@@ -210,70 +198,18 @@
             });
         }
 
-        function openManagerSchedulePopup(name) {
-            currentViewingManager = name;
-            document.getElementById('view-manager-name').innerText = name;
-            document.getElementById('view-year').value = new Date().getFullYear();
-            document.getElementById('view-month').value = new Date().getMonth() + 1;
-            renderManagerSchedule();
-            document.getElementById('manager-modal').classList.remove('hidden');
-        }
-
-        function renderManagerSchedule() {
-            const year = parseInt(document.getElementById('view-year').value);
-            const month = parseInt(document.getElementById('view-month').value);
-            const listEl = document.getElementById('manager-event-list');
-            listEl.innerHTML = '';
-
-            const filtered = events.filter(e => {
-                const d = new Date(e.start);
-                return e.name === currentViewingManager && d.getFullYear() === year && (d.getMonth() + 1) === month;
-            }).sort((a, b) => new Date(a.start) - new Date(b.start));
-
-            if (filtered.length === 0) {
-                listEl.innerHTML = `<div class="text-center py-12 text-slate-400 font-medium">등록된 일정이 없습니다.</div>`;
-                return;
-            }
-
-            filtered.forEach(e => {
-                const item = document.createElement('div');
-                item.className = "flex items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-100";
-                item.innerHTML = `
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 bg-white rounded-xl flex flex-col items-center justify-center shadow-sm border border-slate-100">
-                            <span class="text-[10px] text-slate-400 font-bold uppercase">${new Date(e.start).getMonth()+1}월</span>
-                            <span class="text-lg font-black text-slate-800">${new Date(e.start).getDate()}</span>
-                        </div>
-                        <div>
-                            <div class="font-bold text-slate-800 text-lg">${e.type} ${e.location ? `<span class="text-emerald-600">[${e.location}]</span>` : ''}</div>
-                            <div class="text-xs text-slate-400 font-bold mt-0.5">${e.deduction > 0 ? `연차 소모: ${e.deduction}일` : '일반 일정'}</div>
-                        </div>
-                    </div>
-                `;
-                listEl.appendChild(item);
-            });
-        }
-
-        function initYearMonthSelectors() {
-            const ySelect = document.getElementById('view-year');
-            const mSelect = document.getElementById('view-month');
-            const curYear = new Date().getFullYear();
-            for(let i = curYear - 1; i <= curYear + 1; i++) {
-                const opt = document.createElement('option'); opt.value = i; opt.innerText = `${i}년`;
-                ySelect.appendChild(opt);
-            }
-            for(let i = 1; i <= 12; i++) {
-                const opt = document.createElement('option'); opt.value = i; opt.innerText = `${i}월`;
-                mSelect.appendChild(opt);
-            }
+        function toggleFilter(name) {
+            activeFilter = (activeFilter === name) ? null : name;
+            document.getElementById('filter-indicator').classList.toggle('hidden', !activeFilter);
+            renderDashboard();
+            calendar.refetchEvents();
         }
 
         function initUserSelect() {
             const select = document.getElementById('user-select');
             managers.forEach(name => {
                 const opt = document.createElement('option');
-                opt.value = name;
-                opt.innerText = `${name} ${POSITION}`;
+                opt.value = name; opt.innerText = `${name} ${POSITION}`;
                 select.appendChild(opt);
             });
         }
@@ -293,7 +229,7 @@
         function openEditModal(eventObj) {
             isEditMode = true;
             selectedEventId = eventObj.id;
-            document.getElementById('modal-title').innerText = "기록 수정";
+            document.getElementById('modal-title').innerText = "일정 수정";
             document.getElementById('selected-date').value = eventObj.startStr;
             document.getElementById('user-select').value = eventObj.extendedProps.name;
             document.getElementById('event-type').value = eventObj.extendedProps.type;
@@ -303,14 +239,14 @@
             document.getElementById('modal').classList.remove('hidden');
         }
 
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function closeModal() { document.getElementById('modal').classList.add('hidden'); }
 
         function saveEvent() {
             const name = document.getElementById('user-select').value;
             const type = document.getElementById('event-type').value;
             const date = document.getElementById('selected-date').value;
             const loc = document.getElementById('outside-location').value;
-            if(!date) return alert("날짜를 선택해주세요.");
+            if(!date) return alert("날짜를 선택하세요.");
 
             let deduction = (type === "연차" || type === "여름휴가") ? 1 : (type === "반차" ? 0.5 : 0);
             const newEvent = {
@@ -323,19 +259,19 @@
 
             if (isEditMode) events = events.filter(e => e.id !== selectedEventId);
             events.push(newEvent);
-            localStorage.setItem('hana_pro_v2', JSON.stringify(events));
+            localStorage.setItem('hana_pro_v3', JSON.stringify(events));
             calendar.refetchEvents();
             renderDashboard();
-            closeModal('modal');
+            closeModal();
         }
 
         function deleteEvent() {
-            if(confirm("기록을 삭제하시겠습니까?")) {
+            if(confirm("삭제하시겠습니까?")) {
                 events = events.filter(e => e.id !== selectedEventId);
-                localStorage.setItem('hana_pro_v2', JSON.stringify(events));
+                localStorage.setItem('hana_pro_v3', JSON.stringify(events));
                 calendar.refetchEvents();
                 renderDashboard();
-                closeModal('modal');
+                closeModal();
             }
         }
     </script>
