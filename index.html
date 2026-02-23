@@ -12,30 +12,30 @@
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; color: #1e293b; }
         
-        /* [공휴일 및 날짜 스타일] */
-        .fc-day-sun .fc-daygrid-day-number { color: #ef4444; } /* 일요일 빨간색 */
-        .fc-day-sat .fc-daygrid-day-number { color: #3b82f6; } /* 토요일 파란색 */
-        .is-holiday .fc-daygrid-day-number { color: #ef4444 !important; font-weight: 800; }
-        .holiday-bg { background-color: #fff1f2 !important; }
-        .holiday-label { color: #e11d48; font-size: 0.7rem; font-weight: 700; margin-left: 4px; }
+        /* [1. 달력 레이아웃 및 버튼 복구] */
+        #calendar { 
+            background: white; padding: 20px; border-radius: 24px; 
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;
+            min-height: 700px;
+        }
+        /* 버튼 클릭 가능하도록 보정 */
+        .fc .fc-button { z-index: 10; cursor: pointer; }
+        .fc-event { cursor: pointer !important; border: none !important; font-weight: 600 !important; }
 
-        /* [매니저 카드 스타일] */
+        /* [2. 주말 및 공휴일 가시성] */
+        .fc-day-sun .fc-daygrid-day-number { color: #ef4444 !important; }
+        .fc-day-sat .fc-daygrid-day-number { color: #3b82f6 !important; }
+        .holiday-bg { background-color: #fff1f2 !important; }
+
+        /* [3. 매니저 카드 스타일] */
         .manager-card { 
-            background: white; border: 2px solid transparent; border-radius: 20px; 
-            padding: 20px; transition: all 0.3s ease; cursor: pointer;
+            background: white; border: 2px solid transparent; border-radius: 16px; 
+            padding: 18px; transition: all 0.2s ease; cursor: pointer;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
         }
         .manager-card:hover { transform: translateY(-3px); border-color: #10b981; }
         .active-filter { border-color: #10b981; background-color: #ecfdf5; }
 
-        /* [달력 레이아웃 - 먹통 방지 핵심] */
-        #calendar { 
-            background: white; padding: 25px; border-radius: 24px; 
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;
-            margin-bottom: 50px;
-        }
-        .fc-event { cursor: pointer; border: none !important; padding: 2px 4px !important; font-weight: 600 !important; }
-        
         .modal-content { animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     </style>
@@ -43,15 +43,15 @@
 <body class="p-4 md:p-10">
 
     <div class="max-w-[1400px] mx-auto">
-        <header class="flex flex-col gap-8 mb-10">
+        <header class="flex flex-col gap-6 mb-10">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-4">
-                    <div class="p-3 bg-emerald-600 rounded-2xl">
+                    <div class="p-3 bg-emerald-600 rounded-2xl shadow-lg">
                         <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     </div>
-                    <h1 class="text-3xl font-black text-slate-800">하나생명 이정화 지점장 팀</h1>
+                    <h1 class="text-3xl font-black text-slate-800 tracking-tight">하나생명 이정화 지점장 팀</h1>
                 </div>
-                <div id="filter-indicator" class="hidden bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full font-bold">필터링 중</div>
+                <div id="filter-indicator" class="hidden bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full font-bold animate-pulse">필터링 중</div>
             </div>
             
             <div id="manager-list" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5"></div>
@@ -69,15 +69,15 @@
             
             <div class="space-y-6">
                 <div>
-                    <label class="block text-xs font-black text-slate-400 mb-2 uppercase tracking-widest">날짜</label>
+                    <label class="block text-xs font-black text-slate-400 mb-2 uppercase">날짜</label>
                     <input type="date" id="selected-date" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl font-bold outline-none focus:border-emerald-500">
                 </div>
                 <div>
-                    <label class="block text-xs font-black text-slate-400 mb-2 uppercase tracking-widest">담당자</label>
+                    <label class="block text-xs font-black text-slate-400 mb-2 uppercase">담당 매니저</label>
                     <select id="user-select" class="w-full border-2 border-slate-100 p-4 rounded-2xl font-bold outline-none focus:border-emerald-500 cursor-pointer"></select>
                 </div>
                 <div>
-                    <label class="block text-xs font-black text-slate-400 mb-2 uppercase tracking-widest">구분</label>
+                    <label class="block text-xs font-black text-slate-400 mb-2 uppercase">근무 종류</label>
                     <select id="event-type" onchange="handleTypeChange(this.value)" class="w-full border-2 border-slate-100 p-4 rounded-2xl font-bold outline-none focus:border-emerald-500 cursor-pointer">
                         <option value="연차">연차 (-1일)</option>
                         <option value="여름휴가">여름휴가 (-1일)</option>
@@ -87,7 +87,7 @@
                 </div>
                 <div id="outside-detail" class="hidden bg-emerald-50 p-5 rounded-2xl border-2 border-emerald-100">
                     <label class="block text-sm font-bold text-emerald-700 mb-2">외근처</label>
-                    <select id="outside-location" class="w-full bg-white border-none p-2 rounded-xl font-bold outline-none">
+                    <select id="outside-location" class="w-full bg-white border-none p-2 rounded-xl font-bold text-emerald-800 outline-none">
                         <option value="삼성금융파트너스">삼성금융파트너스</option>
                         <option value="아이에프에이">아이에프에이</option>
                         <option value="에이원금융판매">에이원금융판매</option>
@@ -108,24 +108,13 @@
         const POSITION = "설계매니저";
         const TOTAL_LEAVE = 15;
         
-        let events = JSON.parse(localStorage.getItem('hana_pro_v3')) || [];
-        let holidays = [];
+        let events = JSON.parse(localStorage.getItem('hana_pro_v1')) || [];
         let calendar;
         let activeFilter = null;
         let isEditMode = false;
         let selectedEventId = null;
 
-        // [신규 달력 로직 - 처음부터 다시 작성]
-        async function fetchHolidays() {
-            const year = new Date().getFullYear();
-            try {
-                const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/KR`);
-                if (res.ok) holidays = await res.json();
-            } catch (e) { console.error("공휴일 로드 실패"); }
-        }
-
-        document.addEventListener('DOMContentLoaded', async function() {
-            await fetchHolidays();
+        document.addEventListener('DOMContentLoaded', function() {
             renderDashboard();
             initUserSelect();
 
@@ -133,44 +122,19 @@
             calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 locale: 'ko',
-                height: 'auto', // 고정 높이 제거하여 먹통 방지
-                headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,dayGridWeek' },
+                height: 'auto',
+                headerToolbar: { 
+                    left: 'prev,next today', 
+                    center: 'title', 
+                    right: 'dayGridMonth,dayGridWeek' 
+                },
                 dayMaxEvents: true,
                 events: function(info, successCallback) {
-                    // 필터링 적용된 이벤트만 반환
                     let filtered = activeFilter ? events.filter(e => e.name === activeFilter) : events;
-                    
-                    // 공휴일을 배경 이벤트로 추가 (클릭 방해 안함)
-                    const holidayEvents = holidays.map(h => ({
-                        start: h.date,
-                        display: 'background',
-                        backgroundColor: '#fff1f2'
-                    }));
-                    
-                    successCallback([...filtered, ...holidayEvents]);
-                },
-                // 공휴일 날짜 커스텀 렌더링
-                dayCellContent: function(arg) {
-                    const dateStr = arg.date.toLocaleDateString('en-CA');
-                    const holiday = holidays.find(h => h.date === dateStr);
-                    let nodes = [arg.dayNumberText];
-                    if (holiday) {
-                        let span = document.createElement('span');
-                        span.className = 'holiday-label';
-                        span.innerText = holiday.localName;
-                        nodes.push(span);
-                    }
-                    return { domNodes: nodes };
-                },
-                dayCellClassNames: function(arg) {
-                    const dateStr = arg.date.toLocaleDateString('en-CA');
-                    if (holidays.some(h => h.date === dateStr)) return ['is-holiday'];
+                    successCallback(filtered);
                 },
                 dateClick: (info) => openModal(info.dateStr),
-                eventClick: (info) => {
-                    if (info.event.display === 'background') return;
-                    openEditModal(info.event);
-                }
+                eventClick: (info) => openEditModal(info.event)
             });
             calendar.render();
         });
@@ -259,7 +223,7 @@
 
             if (isEditMode) events = events.filter(e => e.id !== selectedEventId);
             events.push(newEvent);
-            localStorage.setItem('hana_pro_v3', JSON.stringify(events));
+            localStorage.setItem('hana_pro_v1', JSON.stringify(events));
             calendar.refetchEvents();
             renderDashboard();
             closeModal();
@@ -268,7 +232,7 @@
         function deleteEvent() {
             if(confirm("삭제하시겠습니까?")) {
                 events = events.filter(e => e.id !== selectedEventId);
-                localStorage.setItem('hana_pro_v3', JSON.stringify(events));
+                localStorage.setItem('hana_pro_v1', JSON.stringify(events));
                 calendar.refetchEvents();
                 renderDashboard();
                 closeModal();
