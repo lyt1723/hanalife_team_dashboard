@@ -12,35 +12,40 @@
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; color: #1e293b; }
         
-        /* 1. 공휴일 스타일 (대체공휴일 포함) */
+        /* 공휴일 및 주말 스타일 */
         .is-holiday .fc-daygrid-day-number { color: #ef4444 !important; font-weight: 800; }
         .holiday-bg { background-color: #fff1f2 !important; }
-        .holiday-name { color: #e11d48 !important; font-size: 0.7rem !important; font-weight: 700; margin-top: 2px; }
         .fc-day-sun .fc-daygrid-day-number { color: #ef4444; }
         .fc-day-sat .fc-daygrid-day-number { color: #3b82f6; }
+        .holiday-name-label { color: #e11d48; font-size: 0.7rem; font-weight: 700; margin-left: 4px; }
 
-        /* 2. 대시보드 매니저 카드 (가시성 극대화) */
+        /* 매니저 카드 */
         .manager-card { 
             background: white; border: 2px solid transparent; border-radius: 16px; 
-            padding: 18px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer;
+            padding: 18px; transition: all 0.3s ease; cursor: pointer;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
         }
-        .manager-card:hover { transform: translateY(-5px); border-color: #10b981; box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.2); }
-        .manager-card.active-filter { border-color: #10b981; background-color: #ecfdf5; }
+        .manager-card:hover { transform: translateY(-3px); border-color: #10b981; }
 
-        /* 3. 달력 고정 레이아웃 (찌그러짐 방지) */
+        /* 달력 스타일링 */
         #calendar { 
             background: white; padding: 20px; border-radius: 24px; 
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;
-            height: 850px; /* 높이 고정 */
+            height: 800px;
         }
-        .fc-scroller { overflow-y: hidden !important; } /* 내부 스크롤 제어 */
-        .fc-daygrid-day-events { min-height: 80px; } /* 최소 높이 확보 */
-        .fc-event { border: none !important; border-radius: 6px !important; padding: 2px 6px !important; font-weight: 600 !important; }
+        .fc-event { border: none !important; border-radius: 4px !important; padding: 1px 4px !important; font-size: 0.85em !important; }
         
-        /* 모달 스타일 */
+        /* 커스텀 셀렉트 화살표 */
+        .custom-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1.2em;
+        }
+
         .modal-content { animation: slideUp 0.3s ease-out; }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(15px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     </style>
 </head>
 <body class="p-4 md:p-10">
@@ -49,48 +54,42 @@
         <header class="flex flex-col gap-6 mb-10">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-4">
-                    <div class="p-3 bg-emerald-600 rounded-2xl shadow-lg shadow-emerald-200">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <div class="p-3 bg-emerald-600 rounded-2xl shadow-lg">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     </div>
                     <div>
                         <h1 class="text-3xl font-black text-slate-800 tracking-tight">하나생명 이정화 지점장 팀</h1>
-                        <p class="text-slate-400 font-medium">실시간 근무 현황 및 스케줄러</p>
-                    </div>
-                </div>
-                <div id="filter-indicator" class="hidden bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full font-bold animate-pulse">
-                    ⚠️ 특정 매니저 일정 조회 중 (전체보기: 명단 재클릭)
+                        </div>
                 </div>
             </div>
             
-            <div id="manager-list" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5">
-                </div>
+            <div id="manager-list" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5"></div>
         </header>
 
         <div id="calendar"></div>
     </div>
 
     <div id="modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[1000] p-4">
-        <div class="bg-white p-8 rounded-[32px] shadow-2xl w-full max-w-md modal-content border border-white/20">
+        <div class="bg-white p-8 rounded-[32px] shadow-2xl w-full max-w-md modal-content">
             <div class="flex justify-between items-center mb-8">
-                <h3 class="text-2xl font-black text-slate-800" id="modal-title">근무 기록</h3>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-3xl font-light">&times;</button>
+                <h3 class="text-2xl font-black text-slate-800" id="modal-title">일정 등록</h3>
+                <button onclick="closeModal('modal')" class="text-slate-400 hover:text-slate-600 text-3xl">&times;</button>
             </div>
             
             <div class="space-y-6">
                 <div>
                     <label class="block text-sm font-bold text-slate-400 mb-2 uppercase tracking-widest">날짜 선택</label>
-                    <input type="date" id="selected-date" onchange="calendar.gotoDate(this.value)" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl text-slate-700 font-bold outline-none focus:border-emerald-500 transition-all">
+                    <input type="date" id="selected-date" class="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl text-slate-700 font-bold outline-none focus:border-emerald-500">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-bold text-slate-400 mb-2 uppercase tracking-widest">담당 매니저</label>
-                    <select id="user-select" class="w-full border-2 border-slate-100 p-4 rounded-2xl font-bold outline-none focus:border-emerald-500 transition-all appearance-none cursor-pointer">
-                        </select>
+                    <label class="block text-sm font-bold text-slate-400 mb-2 uppercase tracking-widest">설계매니저</label>
+                    <select id="user-select" class="custom-select w-full border-2 border-slate-100 p-4 rounded-2xl font-bold outline-none focus:border-emerald-500 cursor-pointer"></select>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-bold text-slate-400 mb-2 uppercase tracking-widest">근무 구분</label>
-                    <select id="event-type" onchange="handleTypeChange(this.value)" class="w-full border-2 border-slate-100 p-4 rounded-2xl font-bold outline-none focus:border-emerald-500 transition-all appearance-none cursor-pointer">
+                    <label class="block text-sm font-bold text-slate-400 mb-2 uppercase tracking-widest">일정 등록</label>
+                    <select id="event-type" onchange="handleTypeChange(this.value)" class="custom-select w-full border-2 border-slate-100 p-4 rounded-2xl font-bold outline-none focus:border-emerald-500 cursor-pointer">
                         <option value="연차">연차 (-1일)</option>
                         <option value="여름휴가">여름휴가 (-1일)</option>
                         <option value="반차">반차 (-0.5일)</option>
@@ -99,8 +98,8 @@
                 </div>
 
                 <div id="outside-detail" class="hidden bg-emerald-50 p-5 rounded-2xl border-2 border-emerald-100">
-                    <label class="block text-sm font-bold text-emerald-700 mb-2 uppercase">외근처</label>
-                    <select id="outside-location" class="w-full bg-white border-none p-3 rounded-xl font-bold text-emerald-800 outline-none">
+                    <label class="block text-sm font-bold text-emerald-700 mb-2">외근처 선택</label>
+                    <select id="outside-location" class="custom-select w-full bg-white border-none p-3 rounded-xl font-bold text-emerald-800 outline-none">
                         <option value="삼성금융파트너스">삼성금융파트너스</option>
                         <option value="아이에프에이">아이에프에이</option>
                         <option value="에이원금융판매">에이원금융판매</option>
@@ -111,9 +110,29 @@
 
                 <div class="flex gap-4 pt-4">
                     <button id="btn-delete" onclick="deleteEvent()" class="hidden flex-1 py-4 bg-rose-50 text-rose-600 rounded-2xl font-black hover:bg-rose-100 transition">삭제</button>
-                    <button id="btn-save" onclick="saveEvent()" class="flex-1 py-4 bg-slate-800 text-white rounded-2xl font-black hover:bg-slate-900 shadow-xl shadow-slate-200 transition">저장하기</button>
+                    <button onclick="saveEvent()" class="flex-1 py-4 bg-slate-800 text-white rounded-2xl font-black hover:bg-slate-900 shadow-xl transition">저장하기</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div id="manager-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[1100] p-4">
+        <div class="bg-white p-8 rounded-[32px] shadow-2xl w-full max-w-2xl modal-content max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-2xl font-black text-slate-800"><span id="view-manager-name" class="text-emerald-600"></span> 매니저 일정</h3>
+                    <p class="text-slate-400 text-sm font-medium">월별 개인 근태 현황을 확인합니다.</p>
+                </div>
+                <button onclick="closeModal('manager-modal')" class="text-slate-400 hover:text-slate-600 text-3xl">&times;</button>
+            </div>
+
+            <div class="flex gap-3 mb-6 bg-slate-50 p-2 rounded-2xl">
+                <select id="view-year" class="custom-select flex-1 p-3 bg-white border border-slate-200 rounded-xl font-bold" onchange="renderManagerSchedule()"></select>
+                <select id="view-month" class="custom-select flex-1 p-3 bg-white border border-slate-200 rounded-xl font-bold" onchange="renderManagerSchedule()"></select>
+            </div>
+
+            <div id="manager-event-list" class="space-y-3">
+                </div>
         </div>
     </div>
 
@@ -122,59 +141,72 @@
         const POSITION = "설계매니저";
         const TOTAL_LEAVE = 15;
         
-        let events = JSON.parse(localStorage.getItem('hana_pro_v1')) || [];
+        let events = JSON.parse(localStorage.getItem('hana_pro_v2')) || [];
         let holidays = [];
         let calendar;
-        let activeFilter = null; // 특정 매니저 조회용 필터
+        let isEditMode = false;
+        let selectedEventId = null;
+        let currentViewingManager = "";
 
-        // 1. 공휴일 및 대체공휴일 완벽 자동 페칭 (nager API 활용 + 보정)
-        async function fetchHolidays(year) {
-            try {
-                const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/KR`);
-                const data = await res.json();
-                return data.map(h => ({
-                    title: h.localName,
-                    start: h.date,
-                    allDay: true,
-                    display: 'block',
-                    classNames: ['holiday-name'],
-                    backgroundColor: 'transparent',
-                    textColor: '#e11d48',
-                    isHoliday: true
-                }));
-            } catch (e) { return []; }
+        // 1. 공휴일 페칭 및 보정 (대체 공휴일 대응 강화)
+        async function fetchHolidays() {
+            const years = [new Date().getFullYear(), new Date().getFullYear() + 1];
+            let allHolidays = [];
+            for (const year of years) {
+                try {
+                    const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/KR`);
+                    const data = await res.json();
+                    allHolidays = [...allHolidays, ...data];
+                } catch (e) { console.error("공휴일 로딩 실패", e); }
+            }
+            holidays = allHolidays;
         }
 
         document.addEventListener('DOMContentLoaded', async function() {
-            const currentYear = new Date().getFullYear();
-            const h1 = await fetchHolidays(currentYear);
-            const h2 = await fetchHolidays(currentYear + 1);
-            holidays = [...h1, ...h2];
-
+            await fetchHolidays();
             renderDashboard();
             initUserSelect();
+            initYearMonthSelectors();
 
             const calendarEl = document.getElementById('calendar');
             calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 locale: 'ko',
                 headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,dayGridWeek' },
-                dayMaxEventRows: 4, // 5. 한 날짜에 일정이 많으면 "+N 더보기"로 자동 전환 (찌그러짐 방지)
+                dayMaxEventRows: 4,
                 events: function(info, successCallback) {
-                    let filtered = events;
-                    if (activeFilter) {
-                        filtered = events.filter(e => e.name === activeFilter);
-                    }
-                    successCallback([...holidays, ...filtered]);
+                    const holidayEvents = holidays.map(h => ({
+                        title: h.localName,
+                        start: h.date,
+                        allDay: true,
+                        display: 'background',
+                        backgroundColor: '#fff1f2',
+                        extendedProps: { isHoliday: true, holidayName: h.localName }
+                    }));
+                    successCallback([...holidayEvents, ...events]);
                 },
-                dayCellDidMount: function(info) {
-                    const dateStr = info.date.toLocaleDateString('en-CA');
-                    if (holidays.some(h => h.start === dateStr)) {
-                        info.el.classList.add('holiday-bg', 'is-holiday');
+                // 2. 공휴일 배경색 버그 수정 (동적 클래스 할당)
+                dayCellClassNames: function(arg) {
+                    const dateStr = arg.date.toLocaleDateString('en-CA');
+                    if (holidays.some(h => h.date === dateStr)) {
+                        return ['holiday-bg', 'is-holiday'];
                     }
                 },
-                dateClick: function(info) { openModal(info.dateStr); },
-                eventClick: function(info) {
+                // 공휴일 이름 표시
+                dayCellContent: function(arg) {
+                    const dateStr = arg.date.toLocaleDateString('en-CA');
+                    const holiday = holidays.find(h => h.date === dateStr);
+                    let nodes = [arg.dayNumberText];
+                    if (holiday) {
+                        let span = document.createElement('span');
+                        span.className = 'holiday-name-label';
+                        span.innerText = holiday.localName;
+                        nodes.push(span);
+                    }
+                    return { domNodes: nodes };
+                },
+                dateClick: (info) => openModal(info.dateStr),
+                eventClick: (info) => {
                     if (info.event.extendedProps.isHoliday) return;
                     openEditModal(info.event);
                 }
@@ -182,17 +214,73 @@
             calendar.render();
         });
 
-        // 매니저 대시보드 (크고 선명하게)
+        // 4. 매니저 클릭 시 팝업 관련 함수
+        function openManagerSchedulePopup(name) {
+            currentViewingManager = name;
+            document.getElementById('view-manager-name').innerText = name;
+            document.getElementById('view-year').value = new Date().getFullYear();
+            document.getElementById('view-month').value = new Date().getMonth() + 1;
+            renderManagerSchedule();
+            document.getElementById('manager-modal').classList.remove('hidden');
+        }
+
+        function renderManagerSchedule() {
+            const year = parseInt(document.getElementById('view-year').value);
+            const month = parseInt(document.getElementById('view-month').value);
+            const listEl = document.getElementById('manager-event-list');
+            listEl.innerHTML = '';
+
+            const filtered = events.filter(e => {
+                const d = new Date(e.start);
+                return e.name === currentViewingManager && d.getFullYear() === year && (d.getMonth() + 1) === month;
+            }).sort((a, b) => new Date(a.start) - new Date(b.start));
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = `<div class="text-center py-10 text-slate-400 font-medium">등록된 일정이 없습니다.</div>`;
+                return;
+            }
+
+            filtered.forEach(e => {
+                const item = document.createElement('div');
+                item.className = "flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100";
+                item.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-white rounded-xl flex flex-col items-center justify-center shadow-sm border border-slate-100">
+                            <span class="text-[10px] text-slate-400 font-bold uppercase">${new Date(e.start).getMonth()+1}월</span>
+                            <span class="text-lg font-black text-slate-800">${new Date(e.start).getDate()}</span>
+                        </div>
+                        <div>
+                            <div class="font-bold text-slate-800">${e.type} ${e.location ? `(${e.location})` : ''}</div>
+                            <div class="text-xs text-slate-400 font-medium italic">${e.deduction > 0 ? `연차 차감: ${e.deduction}일` : '차감 없음'}</div>
+                        </div>
+                    </div>
+                    <span class="px-3 py-1 bg-white rounded-full text-xs font-bold text-slate-600 border border-slate-200">기록완료</span>
+                `;
+                listEl.appendChild(item);
+            });
+        }
+
+        function initYearMonthSelectors() {
+            const ySelect = document.getElementById('view-year');
+            const mSelect = document.getElementById('view-month');
+            const curYear = new Date().getFullYear();
+            for(let i = curYear - 1; i <= curYear + 1; i++) {
+                ySelect.innerHTML += `<option value="${i}">${i}년</option>`;
+            }
+            for(let i = 1; i <= 12; i++) {
+                mSelect.innerHTML += `<option value="${i}">${i}월</option>`;
+            }
+        }
+
+        // 대시보드 렌더링
         function renderDashboard() {
             const listEl = document.getElementById('manager-list');
             listEl.innerHTML = '';
             managers.forEach(name => {
                 const used = events.filter(e => e.name === name).reduce((acc, curr) => acc + (parseFloat(curr.deduction) || 0), 0);
-                const isActive = activeFilter === name;
-                
                 const card = document.createElement('div');
-                card.className = `manager-card ${isActive ? 'active-filter' : ''}`;
-                card.onclick = () => toggleFilter(name);
+                card.className = `manager-card`;
+                card.onclick = () => openManagerSchedulePopup(name);
                 card.innerHTML = `
                     <div class="flex flex-col gap-1">
                         <span class="text-[10px] font-black text-emerald-600 uppercase tracking-tighter">${POSITION}</span>
@@ -202,25 +290,12 @@
                             <span class="text-xl font-black ${TOTAL_LEAVE - used <= 2 ? 'text-rose-500' : 'text-slate-800'}">${TOTAL_LEAVE - used}일</span>
                         </div>
                         <div class="w-full bg-slate-100 h-1.5 rounded-full mt-2 overflow-hidden">
-                            <div class="bg-emerald-500 h-full" style="width: ${( (TOTAL_LEAVE-used)/TOTAL_LEAVE ) * 100}%"></div>
+                            <div class="bg-emerald-500 h-full transition-all duration-500" style="width: ${( (TOTAL_LEAVE-used)/TOTAL_LEAVE ) * 100}%"></div>
                         </div>
                     </div>
                 `;
                 listEl.appendChild(card);
             });
-        }
-
-        // 4. 특정 매니저 클릭 시 필터링 기능
-        function toggleFilter(name) {
-            if (activeFilter === name) {
-                activeFilter = null;
-                document.getElementById('filter-indicator').classList.add('hidden');
-            } else {
-                activeFilter = name;
-                document.getElementById('filter-indicator').classList.remove('hidden');
-            }
-            renderDashboard();
-            calendar.refetchEvents();
         }
 
         function initUserSelect() {
@@ -237,14 +312,13 @@
             document.getElementById('outside-detail').classList.toggle('hidden', val !== "외근");
         }
 
-        // 모달 관리
         function openModal(date) {
             isEditMode = false;
-            document.getElementById('modal-title').innerText = "새 일정 등록";
+            document.getElementById('modal-title').innerText = "일정 등록";
             document.getElementById('selected-date').value = date;
             document.getElementById('btn-delete').classList.add('hidden');
             document.getElementById('modal').classList.remove('hidden');
-            handleTypeChange("연차");
+            handleTypeChange(document.getElementById('event-type').value);
         }
 
         function openEditModal(eventObj) {
@@ -260,13 +334,15 @@
             document.getElementById('modal').classList.remove('hidden');
         }
 
-        function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
         function saveEvent() {
             const name = document.getElementById('user-select').value;
             const type = document.getElementById('event-type').value;
             const date = document.getElementById('selected-date').value;
             const loc = document.getElementById('outside-location').value;
+            if(!date) { alert("날짜를 선택해주세요."); return; }
+
             let deduction = (type === "연차" || type === "여름휴가") ? 1 : (type === "반차" ? 0.5 : 0);
 
             const newEvent = {
@@ -279,19 +355,19 @@
 
             if (isEditMode) events = events.filter(e => e.id !== selectedEventId);
             events.push(newEvent);
-            localStorage.setItem('hana_pro_v1', JSON.stringify(events));
+            localStorage.setItem('hana_pro_v2', JSON.stringify(events));
             calendar.refetchEvents();
             renderDashboard();
-            closeModal();
+            closeModal('modal');
         }
 
         function deleteEvent() {
             if(confirm("기록을 삭제하시겠습니까?")) {
                 events = events.filter(e => e.id !== selectedEventId);
-                localStorage.setItem('hana_pro_v1', JSON.stringify(events));
+                localStorage.setItem('hana_pro_v2', JSON.stringify(events));
                 calendar.refetchEvents();
                 renderDashboard();
-                closeModal();
+                closeModal('modal');
             }
         }
     </script>
