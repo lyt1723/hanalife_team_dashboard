@@ -139,7 +139,7 @@
 
         const FIXED_HOLIDAYS = [
             "2025-01-01", "2025-01-28", "2025-01-29", "2025-01-30", "2025-03-01", "2025-03-03", "2025-05-05", "2025-05-06", "2025-06-06", "2025-08-15", "2025-10-03", "2025-10-06", "2025-10-08", "2025-12-25",
-            "2026-02-16", "2026-02-17", "2026-02-18", "2026-03-01", "2026-03-02", "2026-05-05", "2026-05-24", "2026-05-25", "2026-06-03", "2026-06-06", "2026-08-15", "2026-08-17", "2026-10-03", "2026-10-05", "2026-10-09", "2026-12-25"
+            "2026-01-01", "2026-02-16", "2026-02-17", "2026-02-18", "2026-03-01", "2026-03-02", "2026-05-05", "2026-05-24", "2026-05-25", "2026-06-03", "2026-06-06", "2026-08-15", "2026-08-17", "2026-10-03", "2026-10-05", "2026-10-09", "2026-12-25"
         ];
 
         document.addEventListener('DOMContentLoaded', () => { 
@@ -155,9 +155,19 @@
 
         async function fetchHolidays(year) {
             let apiData = [];
-            try { const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/KR`); apiData = await res.json(); } catch (e) {}
+            try { 
+                const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/KR`); 
+                if (res.ok) apiData = await res.json(); 
+            } catch (e) { console.error("API 로드 실패"); }
+
             const holidayMap = {};
             apiData.forEach(h => { holidayMap[h.date] = h.localName; });
+
+            const manualNames = {
+                "2025-01-28": "설날", "2025-01-29": "설날", "2025-01-30": "설날",
+                "2026-02-16": "설날", "2026-02-17": "설날", "2026-02-18": "설날"
+            };
+
             const extraHolidays = {
                 "2025-03-03": { ref: "2025-03-01", suffix: " 대체공휴일" },
                 "2025-05-06": { ref: "2025-05-05", suffix: " 대체공휴일" },
@@ -169,25 +179,60 @@
                 "2026-08-17": { ref: "2026-08-15", suffix: " 대체공휴일" },
                 "2026-10-05": { ref: "2026-10-04", suffix: " 대체공휴일" }
             };
-            const uniqueDates = [...new Set([...apiData.map(h => h.date), ...FIXED_HOLIDAYS])];
-            let backgrounds = uniqueDates.map(date => ({ start: date, display: 'background', classNames: ['holiday-bg-event'], isHoliday: true, order: 1 }));
-            let names = apiData.map(h => ({ title: h.localName, start: h.date, display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 }));
-            Object.keys(extraHolidays).forEach(date => {
-                if (date.startsWith(year)) {
-                    const data = extraHolidays[date];
-                    let finalTitle = data.title || (holidayMap[data.ref] || "공휴일") + data.suffix;
-                    names = names.filter(n => n.start !== date);
-                    names.push({ title: finalTitle, start: date, display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 });
+
+            const finalEvents = [];
+            const holidayDates = new Set();
+
+            apiData.forEach(h => {
+                finalEvents.push({ title: h.localName, start: h.date, display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 });
+                holidayDates.add(h.date);
+            });
+
+            Object.keys(manualNames).forEach(date => {
+                if (date.startsWith(year) && !holidayDates.has(date)) {
+                    finalEvents.push({ title: manualNames[date], start: date, display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 });
+                    holidayDates.add(date);
                 }
             });
-            return [...backgrounds, ...names];
+
+            Object.keys(extraHolidays).forEach(date => {
+                if (date.startsWith(year) && !holidayDates.has(date)) {
+                    const data = extraHolidays[date];
+                    let finalTitle = data.title || (holidayMap[data.ref] || "공휴일") + data.suffix;
+                    finalEvents.push({ title: finalTitle, start: date, display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 });
+                    holidayDates.add(date);
+                }
+            });
+
+            const allHolidays = [...new Set([...holidayDates, ...FIXED_HOLIDAYS.filter(d => d.startsWith(year))])];
+            const backgrounds = allHolidays.map(date => ({
+                start: date, display: 'background', classNames: ['holiday-bg-event'], isHoliday: true, order: 1
+            }));
+
+            return [...finalEvents, ...backgrounds];
         }
 
         function initCalendar() {
+            const INITIAL_HOLIDAYS = [
+                ...FIXED_HOLIDAYS.map(date => ({
+                    start: date, display: 'background', classNames: ['holiday-bg-event'], isHoliday: true, order: 1
+                })),
+                { title: '신정', start: '2025-01-01', display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 },
+                { title: '신정', start: '2026-01-01', display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 },
+                { title: '설날', start: '2025-01-28', display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 },
+                { title: '설날', start: '2025-01-29', display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 },
+                { title: '설날', start: '2025-01-30', display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 },
+                { title: '설날', start: '2026-02-16', display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 },
+                { title: '설날', start: '2026-02-17', display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 },
+                { title: '설날', start: '2026-02-18', display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 }
+            ];
+
             mainCalendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
-                initialView: 'dayGridMonth', locale: 'ko',
+                initialView: 'dayGridMonth', 
+                locale: 'ko',
                 eventOrder: ["order", "title"],
                 dayMaxEvents: false,
+                initialEvents: INITIAL_HOLIDAYS, 
                 headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,dayGridWeek' },
                 customButtons: { today: { text: 'today', click: function() { mainCalendar.today(); } } },
                 datesSet: () => {
@@ -201,8 +246,17 @@
                         return `${date.getFullYear()}년 ${date.getMonth() + 1}월`;
                     });
                 },
-                events: async (info, success) => { const holidays = await fetchHolidays(info.start.getFullYear()); success([...holidays, ...events]); },
-                dayCellDidMount: (info) => { const dateStr = info.date.toLocaleDateString('en-CA'); if (FIXED_HOLIDAYS.includes(dateStr)) info.el.setAttribute('data-holiday', 'true'); },
+                events: async (info, success) => { 
+                    const year = info.start.getFullYear();
+                    const holidays = await fetchHolidays(year); 
+                    const initialDates = INITIAL_HOLIDAYS.filter(h => h.display === 'block').map(h => h.start);
+                    const apiTextEvents = holidays.filter(h => h.display !== 'background' && !initialDates.includes(h.start));
+                    success([...apiTextEvents, ...events]); 
+                },
+                dayCellDidMount: (info) => { 
+                    const dateStr = info.date.toLocaleDateString('en-CA'); 
+                    if (FIXED_HOLIDAYS.includes(dateStr)) info.el.setAttribute('data-holiday', 'true'); 
+                },
                 dateClick: (info) => openModal(info.dateStr),
                 eventClick: (info) => { if (!info.event.extendedProps.isHoliday) openEditModal(info.event); }
             });
@@ -253,45 +307,35 @@
         function closeViewer() { document.getElementById('viewer-modal').classList.add('hidden'); }
 
         async function downloadCalendarImage() {
-            window.scrollTo(0, 0);
-            await document.fonts.ready;
+            window.scrollTo(0, 0); await document.fonts.ready;
             const calendarEl = document.getElementById('calendar');
             try {
                 const canvas = await html2canvas(calendarEl, {
                     scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false,
                     onclone: (clonedDoc) => {
-                        const buttons = clonedDoc.querySelectorAll('.fc-button-group, .fc-today-button');
-                        buttons.forEach(btn => btn.style.display = 'none');
-                        const toolbar = clonedDoc.querySelector('.fc-toolbar');
-                        if (toolbar) toolbar.style.paddingBottom = '20px';
-                        const scrollers = clonedDoc.querySelectorAll('.fc-scroller, .fc-daygrid-day-frame, .fc-daygrid-day-events');
-                        scrollers.forEach(el => {
-                            el.style.setProperty('height', 'auto', 'important');
-                            el.style.setProperty('overflow', 'visible', 'important');
+                        clonedDoc.querySelectorAll('.fc-button-group, .fc-today-button').forEach(btn => btn.style.display = 'none');
+                        const toolbar = clonedDoc.querySelector('.fc-toolbar'); if (toolbar) toolbar.style.paddingBottom = '20px';
+                        clonedDoc.querySelectorAll('.fc-scroller, .fc-daygrid-day-frame, .fc-daygrid-day-events').forEach(el => {
+                            el.style.setProperty('height', 'auto', 'important'); el.style.setProperty('overflow', 'visible', 'important');
                             if (el.classList.contains('fc-daygrid-day-frame')) el.style.setProperty('min-height', '140px', 'important');
                         });
-                        const cells = clonedDoc.querySelectorAll('.fc-daygrid-day');
-                        cells.forEach(cell => {
+                        clonedDoc.querySelectorAll('.fc-daygrid-day').forEach(cell => {
                             if (cell.getAttribute('data-holiday') === 'true') cell.style.setProperty('background-color', '#fff1f2', 'important');
                             if (cell.classList.contains('fc-day-today')) cell.style.setProperty('background-color', '#fefce8', 'important');
                         });
                         const style = clonedDoc.createElement('style');
                         style.innerHTML = `
-                            .fc { font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif !important; }
+                            .fc { font-family: -apple-system, BlinkMacSystemFont, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif !important; }
                             * { overflow: visible !important; }
                             .fc-col-header-cell-cushion, .fc-daygrid-day-number, .fc-event-main { display: inline-block !important; line-height: 1 !important; transform: translateY(-3px) !important; }
-                            .fc-col-header-cell-cushion { padding-top: 5px !important; padding-bottom: 2px !important; }
                             .fc-daygrid-day-number { padding-top: 8px !important; padding-right: 8px !important; }
                             .fc-event-main { padding-top: 1px !important; padding-bottom: 3px !important; width: max-content !important; min-width: 100% !important; white-space: nowrap !important; }
-                            .fc-daygrid-event-harness { margin-top: 1px !important; margin-bottom: 1px !important; }
                         `;
                         clonedDoc.head.appendChild(style);
                     }
                 });
-                const now = new Date();
-                const fileName = `${now.getFullYear()}년_${String(now.getMonth() + 1).padStart(2, '0')}월_근무일정표.jpg`;
-                const link = document.createElement('a');
-                link.download = fileName; link.href = canvas.toDataURL('image/jpeg', 1.0); link.click();
+                const now = new Date(); const fileName = `${now.getFullYear()}년_${String(now.getMonth() + 1).padStart(2, '0')}월_근무일정표.jpg`;
+                const link = document.createElement('a'); link.download = fileName; link.href = canvas.toDataURL('image/jpeg', 1.0); link.click();
             } catch (error) { alert("이미지 저장에 실패했습니다."); }
         }
     </script>
