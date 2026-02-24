@@ -139,7 +139,7 @@
 
         const FIXED_HOLIDAYS = [
             "2025-01-01", "2025-01-28", "2025-01-29", "2025-01-30", "2025-03-01", "2025-03-03", "2025-05-05", "2025-05-06", "2025-06-06", "2025-08-15", "2025-10-03", "2025-10-06", "2025-10-08", "2025-12-25",
-            "2026-01-01", "2026-02-16", "2026-02-17", "2026-02-18", "2026-03-01", "2026-03-02", "2026-05-05", "2026-05-24", "2026-05-25", "2026-06-03", "2026-06-06", "2026-08-15", "2026-08-17", "2026-10-03", "2026-10-05", "2026-10-09", "2026-12-25"
+            "2026-02-16", "2026-02-17", "2026-02-18", "2026-03-01", "2026-03-02", "2026-05-05", "2026-05-24", "2026-05-25", "2026-06-03", "2026-06-06", "2026-08-15", "2026-08-17", "2026-10-03", "2026-10-05", "2026-10-09", "2026-12-25"
         ];
 
         document.addEventListener('DOMContentLoaded', () => { 
@@ -148,35 +148,39 @@
             eventsRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 events = data ? Object.values(data) : [];
-                if(mainCalendar) mainCalendar.refetchEvents();
+                mainCalendar.refetchEvents();
                 renderDashboard();
             });
         });
 
         async function fetchHolidays(year) {
             let apiData = [];
-            try { 
-                const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/KR`); 
-                if(res.ok) apiData = await res.json();
-            } catch (e) {}
-            
-            const combinedHolidays = [];
-            const processedDates = new Set();
-
-            apiData.forEach(h => {
-                combinedHolidays.push({ start: h.date, display: 'background', classNames: ['holiday-bg-event'], order: 1 });
-                combinedHolidays.push({ title: h.localName, start: h.date, display: 'block', classNames: ['holiday-name-event'], order: 2 });
-                processedDates.add(h.date);
-            });
-
-            FIXED_HOLIDAYS.forEach(date => {
-                if (date.startsWith(year) && !processedDates.has(date)) {
-                    combinedHolidays.push({ start: date, display: 'background', classNames: ['holiday-bg-event'], order: 1 });
-                    combinedHolidays.push({ title: HOLIDAY_NAMES[date] || "공휴일", start: date, display: 'block', classNames: ['holiday-name-event'], order: 2 });
+            try { const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/KR`); apiData = await res.json(); } catch (e) {}
+            const holidayMap = {};
+            apiData.forEach(h => { holidayMap[h.date] = h.localName; });
+            const extraHolidays = {
+                "2025-03-03": { ref: "2025-03-01", suffix: " 대체공휴일" },
+                "2025-05-06": { ref: "2025-05-05", suffix: " 대체공휴일" },
+                "2025-10-06": { ref: "2025-10-03", suffix: " 대체공휴일" },
+                "2025-10-08": { ref: "2025-10-07", suffix: " 대체공휴일" },
+                "2026-03-02": { ref: "2026-03-01", suffix: " 대체공휴일" },
+                "2026-05-25": { ref: "2026-05-24", suffix: " 대체공휴일" },
+                "2026-06-03": { title: "제9회 전국동시지방선거" },
+                "2026-08-17": { ref: "2026-08-15", suffix: " 대체공휴일" },
+                "2026-10-05": { ref: "2026-10-04", suffix: " 대체공휴일" }
+            };
+            const uniqueDates = [...new Set([...apiData.map(h => h.date), ...FIXED_HOLIDAYS])];
+            let backgrounds = uniqueDates.map(date => ({ start: date, display: 'background', classNames: ['holiday-bg-event'], isHoliday: true, order: 1 }));
+            let names = apiData.map(h => ({ title: h.localName, start: h.date, display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 }));
+            Object.keys(extraHolidays).forEach(date => {
+                if (date.startsWith(year)) {
+                    const data = extraHolidays[date];
+                    let finalTitle = data.title || (holidayMap[data.ref] || "공휴일") + data.suffix;
+                    names = names.filter(n => n.start !== date);
+                    names.push({ title: finalTitle, start: date, display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 });
                 }
             });
-
-            return combinedHolidays;
+            return [...backgrounds, ...names];
         }
 
         function initCalendar() {
@@ -197,14 +201,8 @@
                         return `${date.getFullYear()}년 ${date.getMonth() + 1}월`;
                     });
                 },
-                events: async (info, success) => { 
-                    const holidayData = await fetchHolidays(info.start.getFullYear()); 
-                    success([...holidayData, ...events]); 
-                },
-                dayCellDidMount: (info) => { 
-                    const dateStr = info.date.toLocaleDateString('en-CA'); 
-                    if (FIXED_HOLIDAYS.includes(dateStr)) info.el.setAttribute('data-holiday', 'true'); 
-                },
+                events: async (info, success) => { const holidays = await fetchHolidays(info.start.getFullYear()); success([...holidays, ...events]); },
+                dayCellDidMount: (info) => { const dateStr = info.date.toLocaleDateString('en-CA'); if (FIXED_HOLIDAYS.includes(dateStr)) info.el.setAttribute('data-holiday', 'true'); },
                 dateClick: (info) => openModal(info.dateStr),
                 eventClick: (info) => { if (!info.event.extendedProps.isHoliday) openEditModal(info.event); }
             });
@@ -279,7 +277,7 @@
                         });
                         const style = clonedDoc.createElement('style');
                         style.innerHTML = `
-                            .fc { font-family: -apple-system, BlinkMacSystemFont, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif !important; }
+                            .fc { font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif !important; }
                             * { overflow: visible !important; }
                             .fc-col-header-cell-cushion, .fc-daygrid-day-number, .fc-event-main { display: inline-block !important; line-height: 1 !important; transform: translateY(-3px) !important; }
                             .fc-col-header-cell-cushion { padding-top: 5px !important; padding-bottom: 2px !important; }
@@ -299,4 +297,3 @@
     </script>
 </body>
 </html>
-
