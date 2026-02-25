@@ -37,9 +37,18 @@
         @keyframes slideUp { from { transform: translateY(15px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .viewer-list-container::-webkit-scrollbar { width: 6px; }
         .viewer-list-container::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+
+        #mobile-warning { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; padding: 24px; }
+        @media (max-width: 1023px) { #mobile-warning { display: flex; } body { overflow: hidden; } }
     </style>
 </head>
 <body class="p-4 md:p-10">
+    <div id="mobile-warning">
+        <svg class="w-16 h-16 mb-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+        <h2 class="text-2xl font-black mb-3">PC 접속 권장</h2>
+        <p class="text-slate-300 font-medium leading-relaxed">이 사이트는 PC 환경에 최적화되어 있습니다.<br>원활한 사용을 위해 PC로 접속해 주세요.</p>
+    </div>
+
     <div class="max-w-[1400px] mx-auto">
         <header class="mb-10">
             <div class="flex items-center gap-4 mb-8">
