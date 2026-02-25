@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -264,10 +264,10 @@
 
         function saveEvent() {
             const name = document.getElementById('user-select').value, type = document.getElementById('event-type').value, date = document.getElementById('selected-date').value, loc = document.getElementById('outside-location').value;
-            let deduction = 0, color = '#10b981', title = `${name}(${type}) `;
-            if (type === "연차" || type === "여름휴가") { deduction = 1; if (type === "여름휴가") color = '#f59e0b'; } else if (type === "반차") { deduction = 0.5; } else if (type === "외근") { color = '#3b82f6'; title = `${name}[${loc}] `; }
+            let deduction = 0, color = '#10b981', title = `${name}(${type}) `, order = 3;
+            if (type === "연차" || type === "여름휴가") { deduction = 1; if (type === "여름휴가") color = '#f59e0b'; } else if (type === "반차") { deduction = 0.5; } else if (type === "외근") { color = '#3b82f6'; title = `${name}[${loc}] `; order = 4; }
             const id = isEditMode ? selectedEventId : String(Date.now());
-            eventsRef.child(id).set({ id, title, start: date, color, name, type, deduction, location: loc, order: 3 }).then(() => closeModal());
+            eventsRef.child(id).set({ id, title, start: date, color, name, type, deduction, location: loc, order: order }).then(() => closeModal());
         }
 
         function deleteEvent() { if (confirm("기록을 삭제하시겠습니까?")) eventsRef.child(selectedEventId).remove().then(() => closeModal()); }
