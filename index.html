@@ -1,0 +1,254 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>hanalife_team_dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; color: #1e293b; -webkit-tap-highlight-color: transparent; }
+        *:focus, *:active, *:focus-visible { outline: none !important; box-shadow: none !important; -webkit-tap-highlight-color: transparent !important; }
+        .fc .fc-button:focus, .fc .fc-button:active, .fc-button-primary:focus { box-shadow: none !important; outline: none !important; }
+        .fc .fc-toolbar-title { font-weight: 800 !important; }
+        .fc-day-today { position: relative; }
+        .fc-day-today::before { content: 'today'; position: absolute; top: 6px; left: 8px; font-size: 0.65rem; font-weight: 800; color: #64748b; text-transform: uppercase; z-index: 5; }
+        .fc-col-header-cell.fc-day-today::before { display: none !important; }
+        .fc .fc-day-sun .fc-daygrid-day-number, .fc .fc-daygrid-day[data-holiday="true"] .fc-daygrid-day-number { color: #ef4444 !important; font-weight: 600 !important; }
+        .fc .fc-day-sat .fc-daygrid-day-number { color: #3b82f6 !important; font-weight: 500 !important; }
+        .fc .fc-day-other[data-holiday="true"] .fc-daygrid-day-number { color: #ef4444 !important; opacity: 1 !important; }
+        .holiday-bg-event { background-color: #fff1f2 !important; border: none !important; opacity: 1 !important; }
+        .holiday-bg-event .fc-event-main { display: none !important; }
+        .holiday-name-event { background: transparent !important; border: none !important; }
+        .holiday-name-event .fc-event-main { color: #e11d48 !important; font-size: 0.85rem !important; font-weight: 800 !important; }
+        #calendar { background: white; padding: 20px; border-radius: 24px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; min-height: 800px; }
+        .fc .fc-daygrid-day-frame { height: 140px !important; overflow-y: auto !important; }
+        .fc-daygrid-day-frame::-webkit-scrollbar { width: 8px !important; display: block !important; }
+        .fc-daygrid-day-frame::-webkit-scrollbar-thumb { background: #64748b !important; border-radius: 4px; border: 2px solid #f1f5f9; }
+        .fc-daygrid-event-harness { margin-bottom: 1px !important; }
+        .fc-daygrid-more-link { display: none !important; }
+        .manager-card { transition: all 0.2s ease; cursor: pointer; background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        .manager-card:hover { transform: translateY(-3px); border-color: #10b981; }
+        .modal-content { animation: slideUp 0.3s ease-out; max-height: 90vh; }
+        @keyframes slideUp { from { transform: translateY(15px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .viewer-list-container::-webkit-scrollbar { width: 6px; }
+        .viewer-list-container::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+    </style>
+</head>
+<body class="p-4 md:p-10">
+    <div class="max-w-[1400px] mx-auto">
+        <header class="mb-10">
+            <div class="flex items-center gap-4 mb-8">
+                <div class="p-3 text-emerald-600">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h1 class="text-3xl font-black text-slate-800 tracking-tight">하나생명 이정화 지점장 팀</h1>
+            </div>
+            <div id="manager-list" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5"></div>
+        </header>
+        <div class="relative">
+            <div id="calendar"></div>
+            <div class="flex justify-end mt-4">
+                <button onclick="downloadCalendarImage()" class="flex items-center gap-2 px-6 py-3 bg-slate-800 text-white rounded-xl font-bold text-base shadow-lg hover:bg-slate-700 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    이미지 다운로드 (JPG)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[1000] p-4">
+        <div class="bg-white p-8 rounded-[32px] shadow-2xl w-full max-w-md modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-black text-slate-800" id="modal-title">근무 기록</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-4xl">&times;</button>
+            </div>
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-bold text-slate-500 mb-2 uppercase">날짜 선택</label>
+                    <input type="date" id="selected-date" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl font-bold text-base outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-500 mb-2 uppercase">설계매니저 선택</label>
+                    <select id="user-select" class="w-full border border-slate-200 p-4 rounded-xl font-bold text-base outline-none"></select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-500 mb-2 uppercase">일정 선택</label>
+                    <select id="event-type" onchange="handleTypeChange(this.value)" class="w-full border border-slate-200 p-4 rounded-xl font-bold text-base outline-none">
+                        <option value="연차">연차 (-1일)</option>
+                        <option value="여름휴가">여름휴가 (-1일)</option>
+                        <option value="반차">반차 (-0.5일)</option>
+                        <option value="외근">외근</option>
+                    </select>
+                </div>
+                <div id="outside-detail" class="hidden bg-emerald-50 p-5 rounded-xl border border-emerald-100">
+                    <label class="block text-sm font-bold text-emerald-700 mb-2 uppercase">근무 대리점</label>
+                    <select id="outside-location" class="w-full bg-white border-none p-3 rounded-lg font-bold text-emerald-800 text-base outline-none">
+                        <option value="삼성금융파트너스">삼성금융파트너스</option>
+                        <option value="아이에프에이">아이에프에이</option>
+                        <option value="에이원금융판매">에이원금융판매</option>
+                        <option value="키움에셋플래너">키움에셋플래너</option>
+                        <option value="에이티에셋">에이티에셋</option>
+                    </select>
+                </div>
+                <div class="flex gap-4 pt-2">
+                    <button id="btn-delete" onclick="deleteEvent()" class="hidden flex-1 py-4 bg-rose-50 text-rose-600 rounded-xl font-black text-base">삭제</button>
+                    <button id="btn-save" onclick="saveEvent()" class="flex-1 py-4 bg-slate-800 text-white rounded-xl font-black text-base shadow-lg">저장</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="viewer-modal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-lg flex items-center justify-center z-[2000] p-4">
+        <div class="bg-white p-10 rounded-[40px] shadow-2xl w-full max-w-lg modal-content">
+            <div class="flex justify-between items-start mb-8">
+                <div>
+                    <span id="viewer-pos" class="text-emerald-600 font-black text-sm uppercase tracking-widest"></span>
+                    <h3 class="text-3xl font-black text-slate-800 mt-1" id="viewer-title"></h3>
+                </div>
+                <button onclick="closeViewer()" class="text-slate-300 hover:text-slate-600 text-5xl leading-none">&times;</button>
+            </div>
+            <div class="mb-8">
+                <label class="block text-sm font-bold text-slate-400 mb-3 uppercase tracking-tight">조회할 월 선택</label>
+                <select id="viewer-month-select" onchange="renderViewerList(this.value)" class="w-full bg-slate-50 border border-slate-100 p-5 rounded-2xl font-black text-lg text-slate-700 outline-none cursor-pointer hover:bg-slate-100 transition-colors shadow-sm"></select>
+            </div>
+            <div id="viewer-list" class="viewer-list-container space-y-3 max-h-[400px] overflow-y-auto pr-2"></div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBKpPSc7-yiuIcjqDthqgVtCTLsuPDATcA",
+            authDomain: "hanalife-ga-management.firebaseapp.com",
+            databaseURL: "https://hanalife-ga-management-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "hanalife-ga-management",
+            storageBucket: "hanalife-ga-management.firebasestorage.app",
+            messagingSenderId: "983229714033",
+            appId: "1:983229714033:web:a2ae2063e7ac94527ad5d0",
+            measurementId: "G-BRDZ6VL7XW"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const eventsRef = db.ref('hana_team_events');
+        const MANAGERS = ["이연택", "박승현", "강미현", "김용주", "정혜정", "강선경"];
+        const POSITION = "설계매니저";
+        const TOTAL_LEAVE = 15;
+        let events = [], mainCalendar, selectedEventId, isEditMode = false, currentViewerName = "";
+        const FIXED_HOLIDAYS = ["2025-01-01", "2025-01-28", "2025-01-29", "2025-01-30", "2025-03-01", "2025-03-03", "2025-05-05", "2025-05-06", "2025-06-06", "2025-08-15", "2025-10-03", "2025-10-05", "2025-10-06", "2025-10-07", "2025-10-08", "2025-10-09", "2025-12-25", "2026-01-01", "2026-02-16", "2026-02-17", "2026-02-18", "2026-03-01", "2026-03-02", "2026-05-05", "2026-05-24", "2026-05-25", "2026-06-03", "2026-06-06", "2026-08-15", "2026-08-17", "2026-09-24", "2026-09-25", "2026-09-26", "2026-10-03", "2026-10-05", "2026-10-09", "2026-12-25", "2027-01-01"];
+        const dynamicHolidays = new Set(FIXED_HOLIDAYS);
+        document.addEventListener('DOMContentLoaded', () => { 
+            initUserSelect(); initCalendar();
+            eventsRef.on('value', (snapshot) => {
+                const data = snapshot.val(); events = data ? Object.values(data) : [];
+                mainCalendar.refetchEvents(); renderDashboard();
+                if(!document.getElementById('viewer-modal').classList.contains('hidden')) openViewer(currentViewerName);
+            });
+        });
+        async function fetchHolidays(year) {
+            let apiData = [];
+            try { const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/KR`); if (res.ok) apiData = await res.json(); } catch (e) {}
+            const holidayMap = {}; apiData.forEach(h => { holidayMap[h.date] = h.localName; });
+            const manualNames = {"2025-01-28": "설날", "2025-01-29": "설날", "2025-01-30": "설날", "2025-10-05": "추석", "2025-10-06": "추석", "2025-10-07": "추석", "2026-02-16": "설날", "2026-02-17": "설날", "2026-02-18": "설날", "2026-09-24": "추석", "2026-09-25": "추석", "2026-09-26": "추석"};
+            const extraHolidays = {"2025-03-03": { ref: "2025-03-01", suffix: " 대체공휴일" }, "2025-05-06": { ref: "2025-05-05", suffix: " 대체공휴일" }, "2025-10-06": { ref: "2025-10-03", suffix: " 대체공휴일" }, "2025-10-08": { ref: "2025-10-07", suffix: " 대체공휴일" }, "2026-03-02": { ref: "2026-03-01", suffix: " 대체공휴일" }, "2026-05-25": { ref: "2026-05-24", suffix: " 대체공휴일" }, "2026-06-03": { title: "제9회 전국동시지방선거" }, "2026-08-17": { ref: "2026-08-15", suffix: " 대체공휴일" }, "2026-10-05": { ref: "2026-10-04", suffix: " 대체공휴일" }};
+            const finalEvents = [], holidayDates = new Set();
+            apiData.forEach(h => { finalEvents.push({ title: h.localName, start: h.date, display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 }); holidayDates.add(h.date); });
+            Object.keys(manualNames).forEach(date => { if (date.startsWith(year) && !holidayDates.has(date)) { finalEvents.push({ title: manualNames[date], start: date, display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 }); holidayDates.add(date); }});
+            Object.keys(extraHolidays).forEach(date => { if (date.startsWith(year) && !holidayDates.has(date)) { const data = extraHolidays[date]; let finalTitle = data.title || (holidayMap[data.ref] || "공휴일") + data.suffix; finalEvents.push({ title: finalTitle, start: date, display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 }); holidayDates.add(date); }});
+            const allHolidays = [...new Set([...holidayDates, ...FIXED_HOLIDAYS.filter(d => d.startsWith(year))])];
+            allHolidays.forEach(d => dynamicHolidays.add(d));
+            return [...finalEvents, ...allHolidays.map(date => ({ start: date, display: 'background', classNames: ['holiday-bg-event'], isHoliday: true, order: 1 }))];
+        }
+        function initCalendar() {
+            mainCalendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+                initialView: 'dayGridMonth', locale: 'ko', eventOrder: ["order", "title"],
+                headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,dayGridWeek' },
+                datesSet: () => { if (mainCalendar) renderDashboard(); },
+                events: async (info, success) => { 
+                    const year = info.start.getFullYear(); const holidays = await fetchHolidays(year); 
+                    setTimeout(() => { document.querySelectorAll('.fc-daygrid-day').forEach(cell => { if (dynamicHolidays.has(cell.getAttribute('data-date'))) cell.setAttribute('data-holiday', 'true'); }); }, 0);
+                    success([...holidays, ...events]); 
+                },
+                dateClick: (info) => openModal(info.dateStr),
+                eventClick: (info) => { if (!info.event.extendedProps.isHoliday) openEditModal(info.event); }
+            });
+            mainCalendar.render();
+        }
+        function renderDashboard() {
+            const listEl = document.getElementById('manager-list'); listEl.innerHTML = '';
+            const currentYear = mainCalendar ? mainCalendar.getDate().getFullYear().toString() : new Date().getFullYear().toString();
+            MANAGERS.forEach(name => {
+                const usedLeave = events.filter(e => e.name === name && e.start.startsWith(currentYear)).reduce((acc, curr) => acc + (parseFloat(curr.deduction) || 0), 0);
+                const remain = TOTAL_LEAVE - usedLeave;
+                const card = document.createElement('div'); card.className = 'manager-card'; card.onclick = () => openViewer(name);
+                card.innerHTML = `<div class="flex flex-col gap-1"><span class="text-[13px] font-black text-emerald-600 uppercase tracking-tight">${POSITION}</span><div class="flex justify-between items-end"><span class="text-2xl font-black text-slate-800">${name}</span><span class="text-[13px] font-bold text-slate-400 mb-1">${currentYear}년</span></div><div class="mt-5 flex justify-between items-center"><span class="text-base text-slate-500 font-bold">잔여 연차</span><span class="text-2xl font-black ${remain <= 2 ? 'text-rose-500' : 'text-slate-800'}">${remain}일</span></div><div class="w-full bg-slate-100 h-2.5 rounded-full mt-3 overflow-hidden"><div class="bg-emerald-500 h-full transition-all duration-500" style="width: ${(remain/TOTAL_LEAVE)*100}%"></div></div></div>`;
+                listEl.appendChild(card);
+            });
+        }
+        function initUserSelect() { const select = document.getElementById('user-select'); MANAGERS.forEach(name => { const opt = document.createElement('option'); opt.value = name; opt.innerText = `${name} ${POSITION}`; select.appendChild(opt); }); }
+        function handleTypeChange(val) { document.getElementById('outside-detail').classList.toggle('hidden', val !== "외근"); }
+        function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+        function openModal(date) { isEditMode = false; document.getElementById('selected-date').value = date; document.getElementById('modal-title').innerText = "새 일정 등록"; document.getElementById('btn-delete').classList.add('hidden'); document.getElementById('modal').classList.remove('hidden'); handleTypeChange("연차"); }
+        function openEditModal(eventObj) { isEditMode = true; selectedEventId = eventObj.id; document.getElementById('selected-date').value = eventObj.startStr; document.getElementById('modal-title').innerText = "기록 수정"; document.getElementById('user-select').value = eventObj.extendedProps.name; document.getElementById('event-type').value = eventObj.extendedProps.type; handleTypeChange(eventObj.extendedProps.type); if (eventObj.extendedProps.type === "외근") document.getElementById('outside-location').value = eventObj.extendedProps.location; document.getElementById('btn-delete').classList.remove('hidden'); document.getElementById('modal').classList.remove('hidden'); }
+        function saveEvent() {
+            const name = document.getElementById('user-select').value, type = document.getElementById('event-type').value, date = document.getElementById('selected-date').value, loc = document.getElementById('outside-location').value;
+            let deduction = 0, color = '#10b981', title = `${name}(${type}) `;
+            if (type === "연차" || type === "여름휴가") { deduction = 1; if (type === "여름휴가") color = '#f59e0b'; } else if (type === "반차") { deduction = 0.5; } else if (type === "외근") { color = '#3b82f6'; title = `${name}[${loc}] `; }
+            const id = isEditMode ? selectedEventId : String(Date.now());
+            eventsRef.child(id).set({ id, title, start: date, color, name, type, deduction, location: loc, order: 3 }).then(() => closeModal());
+        }
+        function deleteEvent() { if (confirm("기록을 삭제하시겠습니까?")) eventsRef.child(selectedEventId).remove().then(() => closeModal()); }
+        function openViewer(name) {
+            currentViewerName = name; document.getElementById('viewer-title').innerText = name; document.getElementById('viewer-pos').innerText = POSITION;
+            const managerEvents = events.filter(e => e.name === name), selectEl = document.getElementById('viewer-month-select'); selectEl.innerHTML = '';
+            if (managerEvents.length === 0) {
+                selectEl.innerHTML = '<option value="">기록 없음</option>';
+                document.getElementById('viewer-list').innerHTML = '<div class="py-20 text-center text-slate-300 font-bold">등록된 근무 기록이 없습니다.</div>';
+                document.getElementById('viewer-modal').classList.remove('hidden'); return;
+            }
+            const availableMonths = [...new Set(managerEvents.map(e => e.start.substring(0, 7)))].sort().reverse();
+            availableMonths.forEach(m => {
+                const [y, mm] = m.split('-'), count = managerEvents.filter(e => e.start.startsWith(m)).length, opt = document.createElement('option');
+                opt.value = m; opt.innerText = `${y}년 ${parseInt(mm)}월 (${count}건)`; selectEl.appendChild(opt);
+            });
+            const calMonth = mainCalendar ? mainCalendar.getDate().toLocaleDateString('en-CA').substring(0, 7) : "";
+            selectEl.value = availableMonths.includes(calMonth) ? calMonth : availableMonths[0];
+            renderViewerList(selectEl.value); document.getElementById('viewer-modal').classList.remove('hidden');
+        }
+        function renderViewerList(monthKey) {
+            const listContainer = document.getElementById('viewer-list'); if (!monthKey) return;
+            const filtered = events.filter(e => e.name === currentViewerName && e.start.startsWith(monthKey)).sort((a, b) => new Date(a.start) - new Date(b.start));
+            listContainer.innerHTML = filtered.map(ev => `<div class="flex justify-between items-center p-5 bg-white border border-slate-100 rounded-2xl hover:border-emerald-200 hover:bg-emerald-50/30 transition-all"><div><span class="block text-xs font-bold text-emerald-600 mb-1">${ev.start}</span><span class="font-black text-slate-700 text-lg">${ev.title}</span></div><button onclick="deleteViewerEvent('${ev.id}')" class="p-3 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div>`).join('');
+        }
+        function deleteViewerEvent(id) { if (confirm("해당 기록을 삭제하시겠습니까?")) eventsRef.child(id).remove(); }
+        function closeViewer() { document.getElementById('viewer-modal').classList.add('hidden'); }
+        async function downloadCalendarImage() {
+            window.scrollTo(0, 0); await document.fonts.ready;
+            const calendarEl = document.getElementById('calendar');
+            try {
+                const canvas = await html2canvas(calendarEl, {
+                    scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false,
+                    onclone: (clonedDoc) => {
+                        clonedDoc.querySelectorAll('.fc-button-group, .fc-today-button').forEach(btn => btn.style.display = 'none');
+                        const toolbar = clonedDoc.querySelector('.fc-toolbar'); if (toolbar) toolbar.style.paddingBottom = '20px';
+                        clonedDoc.querySelectorAll('.fc-scroller, .fc-daygrid-day-frame, .fc-daygrid-day-events').forEach(el => { el.style.setProperty('height', 'auto', 'important'); el.style.setProperty('overflow', 'visible', 'important'); if (el.classList.contains('fc-daygrid-day-frame')) el.style.setProperty('min-height', '140px', 'important'); });
+                        clonedDoc.querySelectorAll('.fc-daygrid-day').forEach(cell => {
+                            const date = cell.getAttribute('data-date');
+                            if (dynamicHolidays.has(date)) { cell.style.setProperty('background-color', '#fff1f2', 'important'); const num = cell.querySelector('.fc-daygrid-day-number'); if (num) num.style.setProperty('color', '#ef4444', 'important'); }
+                            if (cell.classList.contains('fc-day-today')) cell.style.setProperty('background-color', '#fefce8', 'important');
+                        });
+                        const style = clonedDoc.createElement('style');
+                        style.innerHTML = `.fc { font-family: -apple-system, BlinkMacSystemFont, \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif !important; } * { overflow: visible !important; } .fc-col-header-cell-cushion, .fc-daygrid-day-number, .fc-event-main { display: inline-block !important; line-height: 1 !important; transform: translateY(-3px) !important; } .fc-daygrid-day-number { padding-top: 8px !important; padding-right: 8px !important; } .fc-event-main { padding-top: 1px !important; padding-bottom: 3px !important; width: max-content !important; min-width: 100% !important; white-space: nowrap !important; }`;
+                        clonedDoc.head.appendChild(style);
+                    }
+                });
+                const now = new Date(), fileName = `${now.getFullYear()}년_${String(now.getMonth() + 1).padStart(2, '0')}월_근무일정표.jpg`, link = document.createElement('a');
+                link.download = fileName; link.href = canvas.toDataURL('image/jpeg', 1.0); link.click();
+            } catch (error) { alert("이미지 저장에 실패했습니다."); }
+        }
+    </script>
+</body>
+</html>
