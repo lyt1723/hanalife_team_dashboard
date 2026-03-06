@@ -493,15 +493,7 @@
         let mobileViewDate = new Date();
         let holidayDataMap = {};
 
-        const FIXED_HOLIDAYS = [
-            "2025-01-01", "2025-01-28", "2025-01-29", "2025-01-30", "2025-03-01", "2025-03-03", 
-            "2025-05-05", "2025-05-06", "2025-06-06", "2025-08-15", "2025-10-03", "2025-10-05", 
-            "2025-10-06", "2025-10-07", "2025-10-08", "2025-10-09", "2025-12-25", "2026-01-01", 
-            "2026-02-16", "2026-02-17", "2026-02-18", "2026-03-01", "2026-03-02", "2026-05-05", 
-            "2026-05-24", "2026-05-25", "2026-06-03", "2026-06-06", "2026-08-15", "2026-08-17", 
-            "2026-09-24", "2026-09-25", "2026-09-26", "2026-10-03", "2026-10-05", "2026-10-09", 
-            "2026-12-25", "2027-01-01"
-        ];
+        const FIXED_HOLIDAYS = ["2025-01-01", "2025-01-28", "2025-01-29", "2025-01-30", "2025-03-01", "2025-03-03", "2025-05-05", "2025-05-06", "2025-06-06", "2025-08-15", "2025-08-17", "2025-09-24", "2025-09-25", "2025-09-26", "2026-01-01", "2026-02-16", "2026-02-17", "2026-02-18", "2026-03-01", "2026-03-02", "2026-05-05", "2026-05-24", "2026-05-25", "2026-06-03", "2026-06-06", "2026-08-15", "2026-08-17", "2026-09-24", "2026-09-25", "2026-09-26", "2026-10-03", "2026-10-05", "2026-10-09", "2026-12-25", "2027-01-01"];
         const dynamicHolidays = new Set(FIXED_HOLIDAYS);
 
         document.addEventListener('DOMContentLoaded', () => { 
@@ -530,105 +522,67 @@
 
         async function fetchHolidays(year) {
             let apiData = [];
-            try { 
-                const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/KR`); 
-                if (res.ok) apiData = await res.json(); 
-            } catch (e) {}
-            
+            try { const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/KR`); if (res.ok) apiData = await res.json(); } catch (e) {}
             const holidayMap = {}; 
             apiData.forEach(h => { holidayMap[h.date] = h.localName; });
-            
-            const manualNames = {
-                "2025-01-28": "설날", "2025-01-29": "설날", "2025-01-30": "설날", 
-                "2025-10-05": "추석", "2025-10-06": "추석", "2025-10-07": "추석", 
-                "2026-02-16": "설날", "2026-02-17": "설날", "2026-02-18": "설날", 
-                "2026-09-24": "추석", "2026-09-25": "추석", "2026-09-26": "추석"
-            };
-            
-            const extraHolidays = {
-                "2025-03-03": { ref: "2025-03-01", suffix: " 대체공휴일" }, 
-                "2025-05-06": { ref: "2025-05-05", suffix: " 대체공휴일" }, 
-                "2025-10-06": { ref: "2025-10-03", suffix: " 대체공휴일" }, 
-                "2025-10-08": { ref: "2025-10-07", suffix: " 대체공휴일" }, 
-                "2026-03-02": { ref: "2026-03-01", suffix: " 대체공휴일" }, 
-                "2026-05-25": { ref: "2026-05-24", suffix: " 대체공휴일" }, 
-                "2026-06-03": { title: "제9회 전국동시지방선거" }, 
-                "2026-08-17": { ref: "2026-08-15", suffix: " 대체공휴일" }, 
-                "2026-10-05": { ref: "2026-10-04", suffix: " 대체공휴일" }
-            };
-            
-            const finalEvents = [];
-            const holidayDates = new Set();
-            
+            const manualNames = {"2025-01-28": "설날", "2025-01-29": "설날", "2025-01-30": "설날", "2025-10-05": "추석", "2025-10-06": "추석", "2025-10-07": "추석", "2026-02-16": "설날", "2026-02-17": "설날", "2026-02-18": "설날", "2026-09-24": "추석", "2026-09-25": "추석", "2026-09-26": "추석"};
+            const extraHolidays = {"2025-03-03": { ref: "2025-03-01", suffix: " 대체공휴일" }, "2025-05-06": { ref: "2025-05-05", suffix: " 대체공휴일" }, "2025-10-06": { ref: "2025-10-03", suffix: " 대체공휴일" }, "2025-10-08": { ref: "2025-10-07", suffix: " 대체공휴일" }, "2026-03-02": { ref: "2026-03-01", suffix: " 대체공휴일" }, "2026-05-25": { ref: "2026-05-24", suffix: " 대체공휴일" }, "2026-06-03": { title: "제9회 전국동시지방선거" }, "2026-08-17": { ref: "2026-08-15", suffix: " 대체공휴일" }, "2026-10-05": { ref: "2026-10-04", suffix: " 대체공휴일" }};
+            const finalEvents = [], holidayDates = new Set();
             apiData.forEach(h => { 
                 finalEvents.push({ title: h.localName, start: h.date, display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 }); 
                 holidayDates.add(h.date); 
-                holidayDataMap[h.date] = h.localName; 
             });
-            
-            Object.keys(manualNames).forEach(date => { 
-                if (date.startsWith(year)) { 
-                    finalEvents.push({ title: manualNames[date], start: date, display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 }); 
-                    holidayDates.add(date); 
-                    holidayDataMap[date] = manualNames[date]; 
-                } 
-            });
-            
-            Object.keys(extraHolidays).forEach(date => { 
-                if (date.startsWith(year)) { 
-                    const data = extraHolidays[date]; 
-                    let finalTitle = data.title || (holidayMap[data.ref] || "공휴일") + data.suffix; 
-                    finalEvents.push({ title: finalTitle, start: date, display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 }); 
-                    holidayDates.add(date); 
-                    holidayDataMap[date] = finalTitle; 
-                } 
-            });
-            
+            Object.keys(manualNames).forEach(date => { if (date.startsWith(year) && !holidayDates.has(date)) { finalEvents.push({ title: manualNames[date], start: date, display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 }); holidayDates.add(date); }});
+            Object.keys(extraHolidays).forEach(date => { if (date.startsWith(year) && !holidayDates.has(date)) { const data = extraHolidays[date]; let finalTitle = data.title || (holidayMap[data.ref] || "공휴일") + data.suffix; finalEvents.push({ title: finalTitle, start: date, display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 }); holidayDates.add(date); }});
             const allHolidays = [...new Set([...holidayDates, ...FIXED_HOLIDAYS.filter(d => d.startsWith(year))])];
-            
-            allHolidays.forEach(d => { 
-                dynamicHolidays.add(d); 
-                if(!holidayDataMap[d]) holidayDataMap[d] = "공휴일"; 
-            });
-            
-            if(year === "2025") holidayDataMap["2025-01-01"] = "신정";
-            if(year === "2026") holidayDataMap["2026-01-01"] = "신정";
-            
-            return [
-                ...finalEvents, 
-                ...allHolidays.map(date => ({ start: date, display: 'background', classNames: ['holiday-bg-event'], isHoliday: true, order: 1 }))
-            ];
+            allHolidays.forEach(d => dynamicHolidays.add(d));
+            return [...finalEvents, ...allHolidays.map(date => ({ start: date, display: 'background', classNames: ['holiday-bg-event'], isHoliday: true, order: 1 }))];
         }
 
         function initCalendar() {
+            const INITIAL_HOLIDAYS = [
+                ...FIXED_HOLIDAYS.map(date => ({ start: date, display: 'background', classNames: ['holiday-bg-event'], isHoliday: true, order: 1 })),
+                { title: '신정', start: '2025-01-01', display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 },
+                { title: '신정', start: '2026-01-01', display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 },
+                { title: '신정', start: '2027-01-01', display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 },
+                { title: '설날', start: '2025-01-28', display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 },
+                { title: '설날', start: '2025-01-29', display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 },
+                { title: '설날', start: '2025-01-30', display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 },
+                { title: '설날', start: '2026-02-16', display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 },
+                { title: '설날', start: '2026-02-17', display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 },
+                { title: '설날', start: '2026-02-18', display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 }
+            ];
             mainCalendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
                 initialView: 'dayGridMonth', 
                 locale: 'ko', 
-                eventOrder: ["order", "title"], 
+                eventOrder: ["order", "title"],
+                initialEvents: INITIAL_HOLIDAYS,
                 headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,dayGridWeek' },
                 datesSet: () => { 
-                    if (mainCalendar) { 
-                        mainCalendar.setOption('titleFormat', (info) => { 
-                            const date = info.date.marker; 
-                            return `${date.getFullYear()}년 ${date.getMonth() + 1}월`; 
-                        }); 
+                    if (mainCalendar) {
+                        mainCalendar.setOption('titleFormat', (info) => {
+                            const date = info.date.marker;
+                            if (mainCalendar.view.type === 'dayGridWeek') {
+                                const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+                                const weekNum = Math.ceil((date.getDate() + firstDay) / 7);
+                                return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${weekNum}주 차`;
+                            }
+                            return `${date.getFullYear()}년 ${date.getMonth() + 1}월`;
+                        });
                         renderDashboard(); 
-                    } 
+                    }
                 },
                 events: async (info, success) => { 
                     const year = info.start.getFullYear(); 
                     const holidays = await fetchHolidays(year); 
-                    setTimeout(() => { 
-                        document.querySelectorAll('.fc-daygrid-day').forEach(cell => { 
-                            if (dynamicHolidays.has(cell.getAttribute('data-date'))) cell.setAttribute('data-holiday', 'true'); 
-                        }); 
-                    }, 0); 
-                    success([...holidays, ...events]); 
+                    const initialDates = INITIAL_HOLIDAYS.filter(h => h.display === 'block').map(h => h.start);
+                    const apiEvents = holidays.filter(h => h.display === 'block' && !initialDates.includes(h.start));
+                    const apiBgEvents = holidays.filter(h => h.display === 'background');
+                    setTimeout(() => { document.querySelectorAll('.fc-daygrid-day').forEach(cell => { if (dynamicHolidays.has(cell.getAttribute('data-date'))) cell.setAttribute('data-holiday', 'true'); }); }, 0);
+                    success([...apiEvents, ...apiBgEvents, ...events]); 
                 },
                 dateClick: (info) => openModal(info.dateStr),
-                eventClick: (info) => { 
-                    if (!info.event.extendedProps.isHoliday) openEditModal(info.event); 
-                }
+                eventClick: (info) => { if (!info.event.extendedProps.isHoliday) openEditModal(info.event); }
             });
             mainCalendar.render();
         }
