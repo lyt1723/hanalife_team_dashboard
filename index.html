@@ -681,7 +681,7 @@
                     else if(ev.type === "여름휴가") color = "bg-amber-400"; 
                     else if(ev.type === "외근") color = "bg-blue-400";
                     
-                    listEl.innerHTML += `<div onclick="openEditModalById('${ev.id}')" class="m-event-item"><div class="m-event-bar ${color}"></div><div class="flex-1"><span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${ev.type}</span><h4 class="text-lg font-black text-slate-800">${ev.name} 매니저</h4>${ev.location ? `<p class="text-xs font-bold text-slate-400 mt-1">${ev.location}</p>` : ''}</div><svg class="w-5 h-5 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></div>`;
+                    listEl.innerHTML += `<div onclick="openEditModalById('${ev.id}')" class="m-event-item"><div class="m-event-bar ${color}"></div><div class="flex-1"><span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${ev.type}</span><h4 class="text-lg font-black text-slate-800">${ev.name} 매니저</h4>${(ev.type === '외근' && ev.location) ? `<p class="text-xs font-bold text-slate-400 mt-1">${ev.location}</p>` : ''}</div><svg class="w-5 h-5 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></div>`;
                 });
             }
             
