@@ -809,9 +809,9 @@
                             if (cell.classList.contains('fc-day-today')) cell.style.setProperty('background-color', '#fefce8', 'important'); 
                         });
                         
-                        const style = clonedDoc.createElement('style');
-                        style.innerHTML = `.fc { font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif !important; } * { overflow: visible !important; } .fc-col-header-cell-cushion, .fc-daygrid-day-number, .fc-event-main { display: inline-block !important; line-height: 1 !important; transform: translateY(-3px) !important; } .fc-daygrid-day-number { padding-top: 8px !important; padding-right: 8px !important; } .fc-event-main { padding-top: 1px !important; padding-bottom: 3px !important; width: max-content !important; min-width: 100% !important; white-space: nowrap !important; }`;
-                        clonedDoc.head.appendChild(style);
+		const style = clonedDoc.createElement('style');
+		style.innerHTML = `.fc { font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif !important; } * { overflow: visible !important; } .fc-col-header-cell-cushion, .fc-daygrid-day-number, .fc-event-main { display: inline-block !important; line-height: 1 !important; transform: translateY(-3px) !important; } .fc-daygrid-day-number { padding-top: 8px !important; padding-right: 8px !important; } .fc-event-main { display: flex !important; align-items: center !important; justify-content: flex-start !important; padding-top: 1px !important; padding-bottom: 4px !important; width: 100% !important; white-space: nowrap !important; text-align: left !important; } .fc-event { display: block !important; width: 100% !important; text-align: left !important; }`;
+		clonedDoc.head.appendChild(style);
                     }
                 });
                 
