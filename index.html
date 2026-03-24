@@ -542,14 +542,14 @@
                 const formattedDate = `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}`;
                 
                 let title = h.dateName;
-                if (title === "1월 1일") title = "신정";
+                if (title.replace(/\s/g, "") === "1월1일") title = "신정";
                 if (title === "기독탄신일") title = "성탄절";
 
                 finalEvents.push({ title: title, start: formattedDate, display: 'block', classNames: ['holiday-name-event'], isHoliday: true, order: 2 });
                 finalEvents.push({ start: formattedDate, display: 'background', classNames: ['holiday-bg-event'], isHoliday: true, order: 1 });
                 
                 dynamicHolidays.add(formattedDate);
-                holidayDataMap[formattedDate] = title;
+                holidayDataMap[formattedDate] = title; 
             });
 
             return finalEvents;
