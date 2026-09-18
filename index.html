@@ -125,6 +125,7 @@
         }
         
         .manager-card {
+	min-width: 360px;
             transition: all 0.2s ease;
             cursor: pointer;
             background: white;
@@ -298,9 +299,9 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                 </div>
-                <h1 class="text-3xl font-black text-slate-800 tracking-tight">하나생명 이정화 지점장 팀</h1>
+                <h1 class="text-3xl font-black text-slate-800 tracking-tight">하나생명 1사업단 2지점</h1>
             </div>
-            <div id="manager-list" class="grid grid-cols-1 md:grid-cols-3 gap-5"></div>
+	<div id="manager-list" class="flex justify-center gap-12"></div>
         </header>
         <div class="relative">
             <div id="calendar"></div>
@@ -319,7 +320,7 @@
         <div class="p-6 pt-10">
             <h1 class="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
                 <span class="w-2 h-6 bg-emerald-500 rounded-full"></span>
-                하나생명 이정화 지점장 팀
+                하나생명 1사업단 2지점
             </h1>
             <div id="mobile-manager-list" class="mobile-manager-scroll"></div>
         </div>
@@ -475,7 +476,7 @@
         const db = firebase.database();
         const eventsRef = db.ref('hana_team_events');
 
-        const MANAGERS = ["이연택", "강미현", "김용주"];
+        const MANAGERS = ["이연택", "강미현"];
         const POSITION = "설계매니저";
         const TOTAL_LEAVE = 15;
         let events = [];
